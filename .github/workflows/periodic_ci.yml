@@ -4,7 +4,7 @@ name: Periodic CI trigger
 on:  # yamllint disable-line rule:truthy
   workflow_dispatch:
   schedule:
-    - cron: 0 14 * * 0
+    - cron: 0 2 * * 6
 env:
   BRANCH_NAME: periodic-ci
   COMMIT_MESSAGE: "ci: This PR is to trigger periodic CI testing"

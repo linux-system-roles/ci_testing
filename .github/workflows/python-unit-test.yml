@@ -1,0 +1,173 @@
+---
+# yamllint disable rule:line-length
+name: Python Unit Tests
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - labeled
+  issue_comment:
+    types:
+      - created
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+  # This is required for the ability to create/update the Pull request status
+  statuses: write
+jobs:
+  python:
+    if: |
+      (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && (contains(github.event.comment.body, '[citest_all]')
+            || contains(github.event.comment.body, '[citest_python-unit-test]'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.comment.author_association)
+            || github.event.comment.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'opened'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_python-unit-test'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.pull_request.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'synchronize'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_python-unit-test'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'labeled'
+        && (github.event.label.name == 'citest_all'
+            || github.event.label.name == 'citest_python-unit-test')
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      )
+    strategy:
+      matrix:
+        pyver_os:
+          - ver: "2.7"
+            os: ubuntu-22.04
+          - ver: "3.9"
+            os: ubuntu-latest
+          - ver: "3.10"
+            os: ubuntu-latest
+          - ver: "3.11"
+            os: ubuntu-latest
+          - ver: "3.12"
+            os: ubuntu-latest
+          - ver: "3.13"
+            os: ubuntu-latest
+    runs-on: ${{ matrix.pyver_os.os }}
+    steps:
+      - name: Get PR head SHA and context
+        if: github.event_name == 'issue_comment'
+        id: head_sha_context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          CONTEXT: "${{ github.workflow }} / ${{ github.job }} (${{ matrix.pyver_os.ver }}, ${{ matrix.pyver_os.os }}) (pull_request)"
+        run: |
+          set -euxo pipefail
+          head_sha=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "context=$CONTEXT" >> "$GITHUB_OUTPUT"
+
+      - name: Set commit status as pending
+        if: github.event_name == 'issue_comment'
+        uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master
+        with:
+          sha: ${{ steps.head_sha_context.outputs.head_sha }}
+          status: pending
+          context: ${{ steps.head_sha_context.outputs.context }}
+          description: Test started
+          targetUrl: ""
+
+      - name: Update git
+        run: |
+          set -euxo pipefail
+          sudo apt update
+          sudo apt install -y git
+
+      - name: checkout PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}
+
+      - name: Set up Python 2.7
+        if: ${{ matrix.pyver_os.ver == '2.7' }}
+        run: |
+          set -euxo pipefail
+          sudo apt install -y python2.7
+
+      - name: Set up Python 3
+        if: ${{ matrix.pyver_os.ver != '2.7' }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+        with:
+          python-version: ${{ matrix.pyver_os.ver }}
+
+      - name: Install platform dependencies, python, tox, tox-lsr
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.pyver_os.ver }}" = 2.7 ]; then
+            # newer virtualenv cannot create python2 venvs
+            # newer tox requires newer virtualenv
+            tox='tox<4.15'
+            virtualenv='virtualenv<20.22.0'
+          else
+            tox=tox
+            virtualenv=virtualenv
+          fi
+          pip install "$tox" "$virtualenv" "git+https://github.com/linux-system-roles/tox-lsr@d594be24ed56e586a5796720d51c261e40c20496"
+          # If you have additional OS dependency packages e.g. libcairo2-dev
+          # then put them in .github/config/ubuntu-requirements.txt, one
+          # package per line.
+          if [ -f .github/config/ubuntu-requirements.txt ]; then
+            sudo apt-get install -y $(cat .github/config/ubuntu-requirements.txt)
+          fi
+
+      - name: Run unit tests
+        run: |
+          set -euxo pipefail
+          toxpyver=$(echo "${{ matrix.pyver_os.ver }}" | tr -d .)
+          toxenvs="py${toxpyver}"
+          # NOTE: The use of flake8, pylint, black with specific
+          # python envs is arbitrary and must be changed in tox-lsr
+          case "$toxpyver" in
+          311) toxenvs="${toxenvs},coveralls,flake8,pylint,black" ;;
+          *) toxenvs="${toxenvs},coveralls" ;;
+          esac
+          TOXENV="$toxenvs" lsr_ci_runtox
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7
+
+      - name: Set final commit status
+        if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != ''
+        uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master
+        with:
+          sha: ${{ steps.head_sha_context.outputs.head_sha }}
+          status: ${{ job.status }}
+          context: ${{ steps.head_sha_context.outputs.context }}
+          description: Test finished
+          targetUrl: ""
