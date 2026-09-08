@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: MIT
+---
+argument_specs:
+  main:
+    short_description: Basic template for Linux system roles
+    options:
+      ci_testing_foo:
+        type: str
+        required: false
+        description: >-
+          A string variable for the foo setting.
+
+      ci_testing_bar:
+        type: bool
+        required: false
+        description: >-
+          A boolean variable that enables or disables the bar feature.
+
+      ci_testing_baz:
+        type: int
+        required: false
+        description: >-
+          An integer variable for a numeric setting.
+
+      ci_testing_config_path:
+        type: path
+        required: false
+        description: >-
+          Filesystem path to the configuration file.
+
+      ci_testing_state:
+        type: str
+        required: false
+        choices:
+          - enabled
+          - disabled
+        description: >-
+          Desired state of the ci-testing subsystem.  Use choices to
+          restrict a string variable to a fixed set of allowed values.
+
+      ci_testing_packages:
+        type: list
+        elements: str
+        required: false
+        description: >-
+          A list of package names.  Use elements to declare the type
+          of each item in the list.
+
+      ci_testing_raw_value:
+        type: raw
+        required: false
+        description: >-
+          A variable that accepts values of different types.  Use raw
+          when the variable can be either a string or a list, for
+          example.
+
+      ci_testing_services:
+        type: list
+        elements: dict
+        required: false
+        description: >-
+          A list of service configurations.  Each entry is a dictionary
+          with its own set of options.  Use this pattern when the role
+          takes a list of structured items.
+        options:
+          name:
+            type: str
+            required: true
+            description: >-
+              Name of the service.  Mark a sub-option as required when
+              it must always be provided.
+          type:
+            type: str
+            required: false
+            choices:
+              - simple
+              - forking
+              - oneshot
+            description: >-
+              Type of the service.  Choices work inside nested options
+              the same way as at the top level.
+          enabled:
+            type: bool
+            required: false
+            description: >-
+              Whether the service should be enabled at boot.

@@ -3,5 +3,5 @@
 # Put internal variables here with Fedora specific values.
 
 # Example:
-__template_packages: []
-__template_services: []
+__ci_testing_packages: []
+__ci_testing_services: []

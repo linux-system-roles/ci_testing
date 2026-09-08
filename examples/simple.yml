@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Example ci-testing role invocation
+  hosts: all
+  vars:
+    ci_testing_foo: example variable value
+    ci_testing_bar: false
+  roles:
+    - linux-system-roles.ci-testing

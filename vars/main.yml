@@ -1,6 +1,47 @@
 # SPDX-License-Identifier: MIT
 ---
 # Put the role's internal variables here that are not distribution specific.
+# You can override these by defining the same variable with a different
+# value in a platform/version specific file in vars/
 
 # Examples of non-distribution specific (generic) internal variables:
-__template_foo_config: "foo.conf"
+__ci_testing_foo_config: foo.conf
+__ci_testing_packages: []
+__ci_testing_services: []
+# ansible_facts required by the role
+__ci_testing_required_facts:
+  - distribution
+  - distribution_major_version
+  - distribution_version
+  - os_family
+# the subsets of ansible_facts that need to be gathered in case any of the
+# facts in required_facts is missing; see the documentation of
+# the 'gather_subset' parameter of the 'setup' module
+__ci_testing_required_facts_subsets: "{{ ['!all', '!min'] +
+  __ci_testing_required_facts }}"
+
+__ci_testing_write_log_file: false
+
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__ci_testing_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__ci_testing_rh_distros_fedora: "{{ __ci_testing_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__ci_testing_is_rh_distro: "{{ ansible_facts['distribution'] in __ci_testing_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__ci_testing_is_rh_distro_fedora: "{{ ansible_facts['distribution'] in __ci_testing_rh_distros_fedora }}"
+
+# Use these in conditionals to check if distro is Red Hat or clone of a specific major version
+__ci_testing_is_rh_distro_7: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '7' }}"
+__ci_testing_is_rh_distro_8: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '8' }}"
+__ci_testing_is_rh_distro_9: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '9' }}"
+__ci_testing_is_rh_distro_10: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '10' }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

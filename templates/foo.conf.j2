@@ -2,7 +2,8 @@
 #
 # Example of a template of configuration file
 #
-# {{ ansible_managed }}
+{{ ansible_managed | comment }}
+{{ "system_role:ci-testing" | comment(prefix="", postfix="") }}
 [foo]
-foo = {{ template_foo }}
-bar = {{ template_bar }}
+foo = {{ ci_testing_foo }}
+bar = {{ ci_testing_bar }}

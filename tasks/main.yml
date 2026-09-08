@@ -1,48 +1,37 @@
 # SPDX-License-Identifier: MIT
 ---
-# Put the tasks for your role here.
-
-# An example of how to set distribution and version specific internal variables
-# (defined in vars/ directory):
-- name: Set version specific variables
-  include_vars: "{{ item }}"
-  with_first_found:
-    - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
-    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
-    - "{{ ansible_distribution }}.yml"
-    - "{{ ansible_os_family }}.yml"
-    - "default.yml"
+- name: Set platform/version specific variables
+  include_tasks: tasks/set_vars.yml
 
 # Examples of some tasks:
 - name: Ensure required packages are installed
   package:
-    name: "{{ __template_packages }}"
+    name: "{{ __ci_testing_packages }}"
     state: present
-
-- name: use crypttab
-  crypttab:
-
-- name: use firewalld
-  firewalld:
-
-- name: use ipaddr
-  debug:
-    msg: ipaddr {{ '127.0.0.1' | ipaddr }}
-
-- name: use json_query
-  debug:
-    msg: json_query {{ ansible_facts | json_query('name') }}
+    use: "{{ (__ci_testing_is_ostree | d(false)) |
+             ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
 - name: Ensure required services are enabled and started
   service:
     name: "{{ item }}"
     state: started
-    enabled: yes
-  loop: "{{ __template_services }}"
+    enabled: true
+  loop: "{{ __ci_testing_services }}"
 
-- name: Generate /etc/{{ __template_foo_config }}
+- name: Generate /etc/{{ __ci_testing_foo_config }}
   template:
-    src: "{{ __template_foo_config }}.j2"
-    dest: /etc/{{ __template_foo_config }}
-    backup: yes
-  notify: template handler to restart services
+    src: "{{ __ci_testing_foo_config }}.j2"
+    dest: /etc/{{ __ci_testing_foo_config }}
+    backup: true
+    mode: "0400"
+  notify: Handler for ci-testing to restart services
+
+- name: Record role success fingerprint
+  sr_fingerprint:
+    status: success
+    role_name: template
+    role_path: "{{ role_path }}"
+    ansible_play_hosts_all: "{{ ansible_play_hosts_all }}"
+    distribution: "{{ ansible_facts['distribution'] }}"
+    distribution_version: "{{ ansible_facts['distribution_version'] }}"
+    write_log_file: "{{ __ci_testing_write_log_file }}"

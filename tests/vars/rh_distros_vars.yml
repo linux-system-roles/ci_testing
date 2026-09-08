@@ -1,0 +1,26 @@
+# vars for handling conditionals for RedHat and clones
+# DO NOT EDIT - file is auto-generated
+# repo is https://github.com/linux-system-roles/.github
+# file is playbooks/templates/tests/vars/rh_distros_vars.yml
+---
+# Ansible distribution identifiers that the role treats like RHEL
+__ci_testing_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__ci_testing_rh_distros_fedora: "{{ __ci_testing_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__ci_testing_is_rh_distro: "{{ ansible_facts['distribution'] in __ci_testing_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__ci_testing_is_rh_distro_fedora: "{{ ansible_facts['distribution'] in __ci_testing_rh_distros_fedora }}"
+
+# Use these in conditionals to check if distro is Red Hat or clone of a specific major version
+__ci_testing_is_rh_distro_7: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '7' }}"
+__ci_testing_is_rh_distro_8: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '8' }}"
+__ci_testing_is_rh_distro_9: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '9' }}"
+__ci_testing_is_rh_distro_10: "{{ __ci_testing_is_rh_distro and ansible_facts['distribution_major_version'] == '10' }}"
