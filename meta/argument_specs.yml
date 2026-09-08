@@ -35,7 +35,7 @@ argument_specs:
           - enabled
           - disabled
         description: >-
-          Desired state of the ci-testing subsystem.  Use choices to
+          Desired state of the ci_testing subsystem.  Use choices to
           restrict a string variable to a fixed set of allowed values.
 
       ci_testing_packages:

@@ -43,7 +43,7 @@
       import_role:
         name: caller
       vars:
-        roletoinclude: linux-system-roles.ci-testing
+        roletoinclude: linux-system-roles.ci_testing
 
     - name: Cleanup
       file:

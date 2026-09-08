@@ -24,7 +24,7 @@
     dest: /etc/{{ __ci_testing_foo_config }}
     backup: true
     mode: "0400"
-  notify: Handler for ci-testing to restart services
+  notify: Handler for ci_testing to restart services
 
 - name: Record role success fingerprint
   sr_fingerprint:

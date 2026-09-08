@@ -1,8 +1,8 @@
-# ci-testing
+# ci_testing
 
-[![ansible-lint.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/ansible-lint.yml) [![ansible-test.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/ansible-test.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/ansible-test.yml) [![codespell.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/codespell.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/codespell.yml) [![markdownlint.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/markdownlint.yml) [![qemu-kvm-integration-tests.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/qemu-kvm-integration-tests.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/qemu-kvm-integration-tests.yml) [![tft.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/tft.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/tft.yml) [![tft_citest_bad.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/tft_citest_bad.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/tft_citest_bad.yml) [![woke.yml](https://github.com/linux-system-roles/ci-testing/actions/workflows/woke.yml/badge.svg)](https://github.com/linux-system-roles/ci-testing/actions/workflows/woke.yml)
+[![ansible-lint.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/ansible-lint.yml) [![ansible-test.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/ansible-test.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/ansible-test.yml) [![codespell.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/codespell.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/codespell.yml) [![markdownlint.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/markdownlint.yml) [![qemu-kvm-integration-tests.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/qemu-kvm-integration-tests.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/qemu-kvm-integration-tests.yml) [![tft.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/tft.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/tft.yml) [![tft_citest_bad.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/tft_citest_bad.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/tft_citest_bad.yml) [![woke.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/woke.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/woke.yml)
 
-![ci-testing](https://github.com/linux-system-roles/ci-testing/workflows/tox/badge.svg)
+![ci_testing](https://github.com/linux-system-roles/ci_testing/workflows/tox/badge.svg)
 
 A template for an ansible role that configures some GNU/Linux subsystem or
 service. A brief description of the role goes here.
@@ -58,7 +58,7 @@ The default value is `"/etc/ci_testing.conf"`.
 
 ### ci_testing_state
 
-Desired state of the ci-testing subsystem.  Must be one of `enabled`
+Desired state of the ci_testing subsystem.  Must be one of `enabled`
 or `disabled`.  The default value is `"enabled"`.
 
 ### ci_testing_packages
@@ -134,7 +134,7 @@ Including an example of how to use your role (for instance, with variables
 passed in as parameters) is always nice for users too:
 
 ```yaml
-- name: Manage the ci-testing subsystem
+- name: Manage the ci_testing subsystem
   hosts: all
   vars:
     ci_testing_foo: "foo foo!"
@@ -146,7 +146,7 @@ passed in as parameters) is always nice for users too:
         type: forking
         enabled: true
   roles:
-    - linux-system-roles.ci-testing
+    - linux-system-roles.ci_testing
 ```
 
 More examples can be provided in the [`examples/`](examples) directory. These

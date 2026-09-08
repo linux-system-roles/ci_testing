@@ -1,6 +1,6 @@
 # Introduction CI Testing Plans
 
-Linux System Roles CI runs [tmt](https://tmt.readthedocs.io/en/stable/index.html) test plans in [Testing farm](https://docs.testing-farm.io/Testing%20Farm/0.1/index.html) with the [tft.yml](https://github.com/linux-system-roles/ci-testing/blob/main/.github/workflows/tft.yml) GitHub workflow.
+Linux System Roles CI runs [tmt](https://tmt.readthedocs.io/en/stable/index.html) test plans in [Testing farm](https://docs.testing-farm.io/Testing%20Farm/0.1/index.html) with the [tft.yml](https://github.com/linux-system-roles/ci_testing/blob/main/.github/workflows/tft.yml) GitHub workflow.
 
 The `plans/test_playbooks_parallel.fmf` plan is a test plan that runs test playbooks in parallel on multiple managed nodes.
 `plans/test_playbooks_parallel.fmf` is generated centrally from `https://github.com/linux-system-roles/.github/`.
@@ -16,7 +16,7 @@ The `plans/test_playbooks_parallel.fmf` plan does the following steps:
 2. Does the required preparation on systems.
 3. For the given role and the given PR, runs the general test from [test.sh](https://github.com/linux-system-roles/tft-tests/blob/main/tests/general/test.sh).
 
-The [tft.yml](https://github.com/linux-system-roles/ci-testing/blob/main/.github/workflows/tft.yml) workflow runs the above plan and uploads the results to our Fedora storage for public access.
+The [tft.yml](https://github.com/linux-system-roles/ci_testing/blob/main/.github/workflows/tft.yml) workflow runs the above plan and uploads the results to our Fedora storage for public access.
 This workflow uses Testing Farm's Github Action [Schedule tests on Testing Farm](https://github.com/marketplace/actions/schedule-tests-on-testing-farm).
 
 ## Running Tests
@@ -47,7 +47,7 @@ You can run tests locally with the `tmt try` cli or remotely in Testing Farm.
     $ TESTING_FARM_API_TOKEN=<your_api_token> \
         testing-farm request --pipeline-type="tmt-multihost" \
         --plan-filter="tag:playbooks_parallel" \
-        --git-url "https://github.com/<my_user>/ci-testing" \
+        --git-url "https://github.com/<my_user>/ci_testing" \
         --git-ref "<my_branch>" \
         --compose CentOS-Stream-9 \
         -e "SYSTEM_ROLES_ONLY_TESTS=tests_default.yml" \

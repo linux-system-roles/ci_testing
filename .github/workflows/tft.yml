@@ -233,7 +233,7 @@ jobs:
           tf_scope: private
           api_key: ${{ secrets.TF_API_KEY_RH }}
           update_pull_request_status: false
-          tmt_plan_filter: "tag:playbooks_parallel,ci-testing"
+          tmt_plan_filter: "tag:playbooks_parallel,ci_testing"
 
       - name: Set final commit status
         uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master

@@ -231,7 +231,7 @@ reviews:
       instructions: |
         **Required headers (in this order):**
         1. ansible_managed header: `{{ ansible_managed | comment }}`
-        2. Role fingerprint: `{{ "system_role:ci-testing" | comment(prefix="", postfix="") }}`
+        2. Role fingerprint: `{{ "system_role:ci_testing" | comment(prefix="", postfix="") }}`
 
     # ========================================
     # Variable Definitions - defaults/
