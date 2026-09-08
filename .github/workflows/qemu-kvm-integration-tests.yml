@@ -1,0 +1,323 @@
+---
+name: Test
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - labeled
+  issue_comment:
+    types:
+      - created
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  # This is required for the ability to create/update the Pull request status
+  statuses: write
+jobs:
+  scenario:
+    if: |
+      (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && (contains(github.event.comment.body, '[citest_all]')
+            || contains(github.event.comment.body, '[citest_qemu-kvm-integration-tests]'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.comment.author_association)
+            || github.event.comment.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'opened'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_qemu-kvm-integration-tests'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.pull_request.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'synchronize'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_qemu-kvm-integration-tests'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'labeled'
+        && (github.event.label.name == 'citest_all'
+            || github.event.label.name == 'citest_qemu-kvm-integration-tests')
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      )
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          # QEMU
+          - { image: "centos-9", env: "qemu-ansible-core-2-16" }
+          - { image: "centos-10", env: "qemu-ansible-core-2-17" }
+          - { image: "fedora-43", env: "qemu-ansible-core-2-20" }
+          - { image: "fedora-44", env: "qemu-ansible-core-2-21" }
+          - { image: "leap-15.6", env: "qemu-ansible-core-2-18" }
+
+          # container
+          - { image: "centos-9", env: "container-ansible-core-2-16" }
+          - { image: "centos-9-bootc", env: "container-ansible-core-2-16" }
+          # broken on non-running dbus
+          # - { image: "centos-10", env: "container-ansible-core-2-17" }
+          - { image: "centos-10-bootc", env: "container-ansible-core-2-17" }
+          - { image: "fedora-43", env: "container-ansible-core-2-20" }
+          - { image: "fedora-44", env: "container-ansible-core-2-21" }
+          - { image: "fedora-43-bootc", env: "container-ansible-core-2-20" }
+          # ansible-core 2.21 cannot enable services using service module in bootc images
+          - { image: "fedora-44-bootc", env: "container-ansible-core-2-20" }
+
+    env:
+      TOX_ARGS: "--skip-tags tests::infiniband,tests::nvme,tests::scsi"
+      ANSIBLE_INJECT_FACT_VARS: "false"
+
+    steps:
+      - name: Get PR head SHA and context
+        if: github.event_name == 'issue_comment'
+        id: head_sha_context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          CONTEXT: "${{ github.workflow }} / scenario (${{ matrix.scenario.image }}, ${{ matrix.scenario.env }}) (pull_request)"
+        run: |
+          set -euxo pipefail
+          head_sha=$(gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "context=$CONTEXT" >> "$GITHUB_OUTPUT"
+
+      - name: Set commit status as pending
+        if: github.event_name == 'issue_comment'
+        uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master
+        with:
+          sha: ${{ steps.head_sha_context.outputs.head_sha }}
+          status: pending
+          context: ${{ steps.head_sha_context.outputs.context }}
+          description: Test started
+          targetUrl: ""
+
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}
+
+      - name: Check if platform is supported
+        id: check_platform
+        run: |
+          set -euxo pipefail
+          image="${{ matrix.scenario.image }}"
+          image="${image%-bootc}"
+
+          # convert image to tag formats
+          platform=
+          platform_version=
+          case "$image" in
+          centos-*) platform=el; platform_version=el"${image#centos-}" ;;
+          fedora-*) platform=fedora; platform_version="${image/-/}" ;;
+          leap-*) platform=leap; platform_version="${image}" ;;
+          esac
+          supported=
+          if yq -e '.galaxy_info.galaxy_tags[] | select(. == "'${platform_version}'" or . == "'${platform}'")' meta/main.yml; then
+            supported=true
+          fi
+
+          # bootc build support (in buildah) has a separate flag
+          if [ "${{ matrix.scenario.image }}" != "$image" ]; then
+            if ! yq -e '.galaxy_info.galaxy_tags[] | select(. == "containerbuild")' meta/main.yml; then
+              supported=
+            fi
+          else
+            # roles need to opt into support for running in a system container
+            env="${{ matrix.scenario.env }}"
+            if [ "${env#container}" != "$env" ] &&
+              ! yq -e '.galaxy_info.galaxy_tags[] | select(. == "container")' meta/main.yml; then
+              supported=
+            fi
+          fi
+
+          echo "supported=$supported" >> "$GITHUB_OUTPUT"
+
+      - name: Set up /dev/kvm
+        if: steps.check_platform.outputs.supported
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm --settle
+          ls -l /dev/kvm
+
+      - name: Disable man-db to speed up package install
+        if: steps.check_platform.outputs.supported
+        run: |
+          echo "set man-db/auto-update false" | sudo debconf-communicate
+          sudo dpkg-reconfigure man-db
+
+      - name: Install test dependencies
+        if: steps.check_platform.outputs.supported
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --upgrade pip
+          sudo apt update
+          sudo apt install -y --no-install-recommends git ansible-core genisoimage qemu-system-x86
+          pip3 install "git+https://github.com/linux-system-roles/tox-lsr@d594be24ed56e586a5796720d51c261e40c20496"
+
+      - name: Check for podman version 5 or higher
+        id: check_podman_version
+        if: steps.check_platform.outputs.supported
+        run: |
+          podman_version=$(podman version -f '{{.Client.Version}}')
+          podman_major_version="${podman_version%%.*}"
+          echo "Podman version: $podman_version"
+          if [ "$podman_major_version" -lt 5 ]; then
+            echo "need_podman_update=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "need_podman_update=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ensure use of podman 5
+        if: steps.check_platform.outputs.supported && steps.check_podman_version.outputs.need_podman_update == 1
+        uses: redhat-actions/podman-install@0499d3899e6b92f60548b38421893a7f8ba4bd07  # main
+
+      - name: Configure tox-lsr
+        if: steps.check_platform.outputs.supported
+        run: >-
+          curl -o ~/.config/linux-system-roles.json
+          https://raw.githubusercontent.com/linux-system-roles/linux-system-roles.github.io/master/download/linux-system-roles.json
+
+      - name: Run qemu integration tests
+        if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'qemu')
+        run: >-
+          tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} --make-batch
+          --log-level debug $TOX_ARGS --skip-tags tests::bootc-e2e
+          --lsr-report-errors-url DEFAULT --
+
+      - name: Qemu result summary
+        if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'qemu') && always()
+        run: |
+          set -euo pipefail
+          # some platforms may have setup/cleanup playbooks - need to find the
+          # actual test playbook that starts with tests_
+          while read code start end test_files; do
+              for f in $test_files; do
+                  test_file="$f"
+                  f="$(basename $test_file)"
+                  if [[ "$f" =~ ^tests_ ]]; then
+                      break
+                  fi
+              done
+              if [ "$code" = "0" ]; then
+                  echo -n "PASS: "
+                  mv "$test_file.log" "${test_file}-SUCCESS.log"
+              else
+                  echo -n "FAIL: "
+                  mv "$test_file.log" "${test_file}-FAIL.log"
+              fi
+              echo "$f"
+          done < batch.report
+
+      - name: Run container tox integration tests
+        if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'container')
+        run: |
+          set -euo pipefail
+          rc=0
+          # we cannot skip these on the first test
+          export SKIP_REQUIREMENTS=false
+          for t in tests/tests_*.yml; do
+              if tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} $t > ${t}.log 2>&1; then
+                  echo "PASS: $(basename $t)"
+                  mv "${t}.log" "${t}-SUCCESS.log"
+              else
+                  echo "FAIL: $(basename $t)"
+                  mv "${t}.log" "${t}-FAIL.log"
+                  rc=1
+              fi
+              # we can skip these on subsequent runs
+              export SKIP_REQUIREMENTS=true
+          done
+          exit $rc
+
+      - name: Run bootc validation tests in QEMU
+        if: steps.check_platform.outputs.supported &&
+            startsWith(matrix.scenario.env, 'container') &&
+            endsWith(matrix.scenario.image, '-bootc')
+        run: |
+          set -euxo pipefail
+          env=$(echo "${{ matrix.scenario.env }}" | sed 's/^container-/qemu-/')
+
+          for image_file in $(ls tests/tmp/*/qcow2/disk.qcow2 2>/dev/null); do
+              test="tests/$(basename $(dirname $(dirname $image_file))).yml"
+              if tox -e "$env" -- --image-file "$(pwd)/$image_file" \
+                     --log-level debug $TOX_ARGS \
+                     --lsr-report-errors-url DEFAULT \
+                     -e '{"__bootc_validation": true}' \
+                     -- "$test" >out 2>&1; then
+                  mv out "${test}-PASS.log"
+              else
+                  mv out "${test}-FAIL.log"
+                  exit 1
+              fi
+          done
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: "logs-${{ matrix.scenario.image }}-${{ matrix.scenario.env }}"
+          path: |
+            tests/*.log
+            artifacts/default_provisioners.log
+            artifacts/*.qcow2.*.log
+            batch.txt
+            batch.report
+          retention-days: 30
+
+      - name: Show test log failures
+        if: steps.check_platform.outputs.supported && failure()
+        run: |
+          set -euo pipefail
+          # grab check_logs.py script
+          curl -s -L -o check_logs.py https://raw.githubusercontent.com/linux-system-roles/auto-maintenance/refs/heads/main/check_logs.py
+          chmod +x check_logs.py
+          declare -a cmdline=(./check_logs.py --github-action-format)
+          for log in tests/*-FAIL.log; do
+              cmdline+=(--lsr-error-log "$log")
+          done
+          "${cmdline[@]}"
+
+      - name: Set final commit status
+        if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != '' && (steps.check_platform.outputs.supported || failure())
+        uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master
+        with:
+          sha: ${{ steps.head_sha_context.outputs.head_sha }}
+          status: ${{ job.status }}
+          context: ${{ steps.head_sha_context.outputs.context }}
+          description: Test finished
+          targetUrl: ""
+
+      - name: Set commit status as success with a description that platform is skipped
+        if: ${{ success() && github.event_name == 'issue_comment' && steps.check_platform.outputs.supported == '' }}
+        uses: myrotvorets/set-commit-status-action@c0f880c99d91381c6fdb97726f03feb8004409b4  # master
+        with:
+          sha: ${{ steps.head_sha_context.outputs.head_sha }}
+          status: success
+          context: ${{ steps.head_sha_context.outputs.context }}
+          description: The role does not support this platform. Skipping.
+          targetUrl: ""
