@@ -22,6 +22,6 @@ exclude_paths:
   - examples/roles/
   - .collection/
 mock_roles:
-  - linux-system-roles.ci-testing
+  - linux-system-roles.ci_testing
 supported_ansible_also:
   - "2.14.0"

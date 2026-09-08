@@ -4,7 +4,7 @@
   tasks:
     - name: Set platform/version specific variables
       include_role:
-        name: linux-system-roles.ci-testing
+        name: linux-system-roles.ci_testing
         tasks_from: set_vars.yml
         public: true
 

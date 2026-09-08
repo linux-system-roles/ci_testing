@@ -61,4 +61,4 @@
       include_tasks: tasks/check_header.yml
       vars:
         __file: /etc/foo.conf
-        __fingerprint: system_role:ci-testing
+        __fingerprint: system_role:ci_testing
