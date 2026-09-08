@@ -54,7 +54,7 @@ The default value is `0`.
 ### ci_testing_config_path
 
 Filesystem path to the configuration file.
-The default value is `"/etc/template.conf"`.
+The default value is `"/etc/ci_testing.conf"`.
 
 ### ci_testing_state
 

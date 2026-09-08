@@ -29,7 +29,7 @@
 - name: Record role success fingerprint
   sr_fingerprint:
     status: success
-    role_name: template
+    role_name: ci_testing
     role_path: "{{ role_path }}"
     ansible_play_hosts_all: "{{ ansible_play_hosts_all }}"
     distribution: "{{ ansible_facts['distribution'] }}"

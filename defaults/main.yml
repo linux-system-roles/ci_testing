@@ -7,7 +7,7 @@
 ci_testing_foo: foo
 ci_testing_bar: true
 ci_testing_baz: 0
-ci_testing_config_path: /etc/template.conf
+ci_testing_config_path: /etc/ci_testing.conf
 ci_testing_state: enabled
 ci_testing_packages: []
 ci_testing_raw_value: ""

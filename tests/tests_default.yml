@@ -23,7 +23,7 @@
           set -eo pipefail;
           journalctl --since "{{ __journal_start_time }}" --no-pager |
           grep -v " Invoked with" |
-          grep "sr_fingerprint.*role_name=template"
+          grep "sr_fingerprint.*role_name=ci_testing"
       register: __register_journal_fingerprints
       changed_when: false
       when: __register_dev_log.stat.exists

@@ -8,7 +8,7 @@
 - name: Record role begin fingerprint
   sr_fingerprint:
     status: begin
-    role_name: template
+    role_name: ci_testing
     role_path: "{{ role_path }}"
     ansible_play_hosts_all: "{{ ansible_play_hosts_all }}"
     distribution: "{{ ansible_facts['distribution'] }}"
