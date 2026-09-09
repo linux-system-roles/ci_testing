@@ -15,15 +15,10 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  actions: write
-  deployments: write
 jobs:
   comment:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
     steps:
       - name: Comment with CI instructions
         env:
@@ -88,9 +83,6 @@ jobs:
           || github.event.comment.user.login == 'systemroller')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: write
-      pull-requests: write
       actions: write
       deployments: write
     steps:
