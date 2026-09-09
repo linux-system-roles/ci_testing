@@ -104,7 +104,7 @@ jobs:
           WAIT_SECONDS: "5"
           WAIT_ATTEMPTS: "5"
         run: |
-          set -euo pipefail
+          set -euxo pipefail
 
           comment_pr() {
             local body="$1"$'\n\n''<!-- lsr-approve-citest -->'
