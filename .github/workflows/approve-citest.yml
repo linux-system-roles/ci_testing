@@ -1,0 +1,280 @@
+---
+# Generated with help by Cursor using model Cursor Grok 4.6
+# yamllint disable rule:line-length
+name: Approve CI tests
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  issue_comment:
+    types:
+      - created
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: write
+jobs:
+  comment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment with CI instructions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          set -euxo pipefail
+          gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --raw-field body="$(cat <<'EOF'
+          Thank you for your submission.
+
+          In order to run CI tests, a role maintainer must add one or more PR comments of
+          the following values:
+
+          `[citest_all]` - run all CI tests
+
+          If you want to run only individual CI tests, use one or more of the following:
+
+          `@coderabbitai review` - run AI review
+
+          `[citest_ansible-lint]` - run ansible-lint
+
+          `[citest_ansible-managed-var-comment]` - run ansible-managed-var-comment
+
+          `[citest_ansible-plugin-scan]` - run ansible-plugin-scan
+
+          `[citest_ansible-test]` - run ansible-test
+
+          `[citest_codeql]` - run codeql
+
+          `[citest_codespell]` - run codespell
+
+          `[citest_markdownlint]` - run markdownlint
+
+          `[citest_python-unit-test]` - run python-unit-test
+
+          `[citest_qemu-kvm-integration-tests]` - run qemu-kvm-integration-tests
+
+          `[citest_shellcheck]` - run shellcheck
+
+          `[citest_test_converting_readme]` - run test_converting_readme
+
+          `[citest_tft]` - run tft
+
+          `[citest]` - run tft (legacy)
+
+          `[citest_woke]` - run woke
+
+          <!-- lsr-approve-citest -->
+          EOF
+          )"
+
+  approve:
+    if: |
+      github.event_name == 'issue_comment'
+      && github.event.issue.pull_request
+      && contains(github.event.comment.body, '[citest')
+      && !contains(github.event.comment.body, '<!-- lsr-approve-citest -->')
+      && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                   github.event.comment.author_association)
+          || github.event.comment.user.login == 'systemroller')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve waiting CI workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENTER: ${{ github.event.comment.user.login }}
+          WAIT_SECONDS: "5"
+          WAIT_ATTEMPTS: "5"
+        run: |
+          set -euo pipefail
+
+          comment_pr() {
+            local body="$1"$'\n\n''<!-- lsr-approve-citest -->'
+            gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              --raw-field body="$body"
+          }
+
+          head_sha=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.head.sha')
+
+          mapfile -t known_files < <(
+            gh api "repos/${REPO}/actions/workflows?per_page=100" --jq '
+              [.workflows[]
+               | select(.state=="active")
+               | .path | split("/")[-1]
+               | select(endswith(".yml"))
+               | select(test("^(approve-citest|tft_citest_bad|build_docs|changelog_to_tag|periodic_ci)\\.yml$") | not)
+              ] | unique | .[]
+            '
+          )
+
+          is_known() {
+            local wf="$1"
+            local f
+            for f in "${known_files[@]+"${known_files[@]}"}"; do
+              if [ "$f" = "$wf" ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          process_all=false
+          declare -a requested=()
+          declare -a unknown=()
+          mapfile -t tokens < <(grep -oE '\[citest(_[^]]+)?\]' <<<"$COMMENT_BODY" | sort -u || true)
+          for token in "${tokens[@]}"; do
+            case "$token" in
+              '[citest_all]')
+                process_all=true
+                continue
+                ;;
+              '[citest]')
+                name=tft
+                ;;
+              '[citest_bad]')
+                continue
+                ;;
+              *)
+                name="${token#\[citest_}"
+                name="${name%]}"
+                ;;
+            esac
+            wf="${name}.yml"
+            if is_known "$wf"; then
+              requested+=("$wf")
+            else
+              unknown+=("$token")
+            fi
+          done
+
+          if [ "$process_all" = true ]; then
+            if [ "${#known_files[@]}" -gt 0 ]; then
+              requested=("${known_files[@]}")
+            else
+              requested=()
+            fi
+            comment_pr '@coderabbitai review'
+          fi
+
+          if [ "${#unknown[@]}" -gt 0 ]; then
+            body="Could not approve CI tests from comment by @${COMMENTER}."$'\n\n'
+            body+="These [citest_...] values do not match a workflow file in this repository:"$'\n'
+            for token in "${unknown[@]}"; do
+              body+=$'\n'"- \`${token}\`"
+            done
+            if [ "${#known_files[@]}" -gt 0 ]; then
+              body+=$'\n\n'"Known workflows:"
+              for wf in "${known_files[@]}"; do
+                body+=$'\n'"- \`[citest_${wf%.yml}]\`"
+              done
+              body+=$'\n'"- \`[citest]\` (legacy alias for tft)"
+              body+=$'\n'"- \`[citest_all]\`"
+            fi
+            comment_pr "$body"
+          fi
+
+          if [ "${#requested[@]}" -eq 0 ]; then
+            if [ "$process_all" = true ]; then
+              comment_pr "No CI workflows were found to approve for \`[citest_all]\`."
+            fi
+            exit 0
+          fi
+
+          # Unique requested workflows, preserving order
+          declare -a workflows=()
+          for wf in "${requested[@]}"; do
+            seen=false
+            for existing in "${workflows[@]+"${workflows[@]}"}"; do
+              if [ "$existing" = "$wf" ]; then
+                seen=true
+                break
+              fi
+            done
+            if [ "$seen" = false ]; then
+              workflows+=("$wf")
+            fi
+          done
+
+          runs_for_pr() {
+            local wf="$1"
+            local status_qs="$2"
+            local qs="per_page=100"
+            if [ -n "$status_qs" ]; then
+              qs="${qs}&status=${status_qs}"
+            fi
+            gh api "repos/${REPO}/actions/workflows/${wf}/runs?${qs}" \
+              | jq --arg sha "$head_sha" --argjson pr "$PR_NUMBER" \
+                '[.workflow_runs[] | select(.head_sha == $sha or any(.pull_requests[]?; .number == $pr))]'
+          }
+
+          for wf in "${workflows[@]}"; do
+            waiting_json='[]'
+            attempt=1
+            while [ "$attempt" -le "$WAIT_ATTEMPTS" ]; do
+              waiting_json=$(runs_for_pr "$wf" waiting)
+              if [ "$(jq 'length' <<<"$waiting_json")" -gt 0 ]; then
+                break
+              fi
+              if [ "$attempt" -lt "$WAIT_ATTEMPTS" ]; then
+                sleep "$WAIT_SECONDS"
+              fi
+              attempt=$((attempt + 1))
+            done
+
+            if [ "$(jq 'length' <<<"$waiting_json")" -eq 0 ]; then
+              all_json=$(runs_for_pr "$wf" "")
+              body="No workflow runs for \`${wf}\` are waiting for approval on PR #${PR_NUMBER} (head \`${head_sha}\`)."
+              if [ "$(jq 'length' <<<"$all_json")" -eq 0 ]; then
+                body+=$'\n\n'"No recent runs were found for this workflow on the pull request."
+              else
+                body+=$'\n\n'"Recent runs for this workflow:"
+                body+=$(jq -r '.[] | "\n- run [\(.id)](\(.html_url)): status=\(.status) conclusion=\(.conclusion // "none") event=\(.event)"' <<<"$all_json")
+              fi
+              comment_pr "$body"
+              continue
+            fi
+
+            mapfile -t run_ids < <(jq -r '.[].id' <<<"$waiting_json")
+            for run_id in "${run_ids[@]}"; do
+              set +e
+              pending_err=$(mktemp)
+              pending_json=$(gh api "repos/${REPO}/actions/runs/${run_id}/pending_deployments" 2>"$pending_err")
+              pending_rc=$?
+              set -e
+              if [ "$pending_rc" -ne 0 ]; then
+                comment_pr "Error getting pending deployments for ${wf} run ${run_id}: $(cat "$pending_err")"
+                rm -f "$pending_err"
+                continue
+              fi
+              rm -f "$pending_err"
+
+              env_ids_json=$(jq '[.[].environment.id] | unique' <<<"$pending_json")
+              if [ "$(jq 'length' <<<"$env_ids_json")" -eq 0 ]; then
+                comment_pr "Workflow run ${run_id} for \`${wf}\` is waiting, but no pending deployments were returned."
+                continue
+              fi
+
+              payload=$(jq -n \
+                --argjson environment_ids "$env_ids_json" \
+                --arg comment "Approved via CI comment by @${COMMENTER}" \
+                '{environment_ids: $environment_ids, state: "approved", comment: $comment}')
+              set +e
+              approve_err=$(mktemp)
+              gh api --method POST "repos/${REPO}/actions/runs/${run_id}/pending_deployments" \
+                --input - <<<"$payload" >/dev/null 2>"$approve_err"
+              approve_rc=$?
+              set -e
+              if [ "$approve_rc" -ne 0 ]; then
+                comment_pr "Error approving pending deployments for ${wf} run ${run_id}: $(cat "$approve_err")"
+              fi
+              rm -f "$approve_err"
+            done
+          done

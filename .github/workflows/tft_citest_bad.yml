@@ -16,7 +16,7 @@ jobs:
       actions: write # for re-running failed jobs: https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#re-run-a-job-from-a-workflow-run
     runs-on: ubuntu-latest
     steps:
-      - name: Wait 10s until tft.yml workflow is created and skipped because new comment don't match [citest]
+      - name: Wait 10s until tft.yml workflow is not still running
         run: sleep 10s
 
       - name: Re-run failed jobs for this PR
@@ -25,7 +25,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR_TITLE: ${{ github.event.issue.title }}
         run: |
-          PENDING_RUN=$(gh api "repos/$REPO/actions/workflows/tft.yml/runs?event=issue_comment" \
+          PENDING_RUN=$(gh api "repos/$REPO/actions/workflows/tft.yml/runs?event=pull_request" \
             | jq -r "[.workflow_runs[] | select( .display_title == \"$PR_TITLE\") | \
             select(.status == \"pending\" or .status == \"queued\" or .status == \"in_progress\") | .id][0]")
           # if pending run don't exist, take the last run with failure state
@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
           # TF tests can fail or can be cancelled due to TF internal issues
-          RUN_ID=$(gh api "repos/$REPO/actions/workflows/tft.yml/runs?event=issue_comment" \
+          RUN_ID=$(gh api "repos/$REPO/actions/workflows/tft.yml/runs?event=pull_request" \
             | jq -r "[.workflow_runs[] | select( .display_title == \"$PR_TITLE\" ) | select( .conclusion == \"failure\" or .conclusion == \"cancelled\" ) | .id][0]")
           if [ "$RUN_ID" = "null" ]; then
             echo "Failed workflow not found, exiting"

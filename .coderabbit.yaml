@@ -6,12 +6,14 @@
 
 chat:
   art: false
+  allow_non_org_members: false
 
 reviews:
   # Skip reviews for PRs with [citest_skip] in the title
   auto_review:
     ignore_title_keywords:
       - "[citest_skip]"
+    enabled: false
 
   # Disable fun features
   poem: false
@@ -200,13 +202,14 @@ reviews:
         - NEVER use `ansible.builtin.include_role` directly
         - NEVER use `ansible.builtin.import_role` directly
         - NEVER use `roles:` keyword
-        - ALWAYS use the centrally managed wrapper:
+        - ALMOST ALWAYS use the centrally managed wrapper:
           ```yaml
           - name: Run role
             ansible.builtin.include_tasks: tasks/run_role_with_clear_facts.yml
             vars:
               ci_testing_<parameter>: <value>
           ```
+          The only exception to this rule is in tests_invalid_inputs.yml where we need to use the include_role directly to test the invalid inputs.
 
         **Test quality requirements:**
         - Tests should verify both success and failure scenarios
