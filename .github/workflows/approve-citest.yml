@@ -11,14 +11,17 @@ on:  # yamllint disable-line rule:truthy
   issue_comment:
     types:
       - created
-permissions:
+# permissions at job level override permissions at workflow level
+permissions:  # default low level permissions
   contents: read
-  pull-requests: write
-  issues: write
 jobs:
   comment:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - name: Comment with CI instructions
         env:
@@ -26,7 +29,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.number }}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --raw-field body="$(cat <<'EOF'
           Thank you for your submission.
@@ -83,6 +86,9 @@ jobs:
           || github.event.comment.user.login == 'systemroller')
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      pull-requests: write
+      issues: write
       actions: write
       deployments: write
     steps:
