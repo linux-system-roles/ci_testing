@@ -1,0 +1,64 @@
+---
+# This workflow must never check out or execute pull request code. It uses
+# pull_request_target only so fork pull requests can receive this fixed comment.
+name: Show CI test instructions
+on:  # yamllint disable-line rule:truthy
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  contents: read
+
+jobs:
+  instructions:
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post CI test instructions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --raw-field body="$(cat <<'EOF'
+          CI tests do not run automatically on pull requests.  A role maintainer
+          can run them by adding a PR comment with a `/citest` slash command.
+
+          Run every available CI workflow:
+
+          ```text
+          /citest all
+          ```
+
+          Run one or more selected workflows by separating their names with spaces:
+
+          ```text
+          /citest ansible-lint
+          /citest ansible-lint markdownlint
+          ```
+
+          Available workflow names:
+
+          - `ansible-lint`
+          - `ansible-managed-var-comment`
+          - `ansible-test`
+          - `codespell`
+          - `markdownlint`
+          - `pr-title-lint`
+          - `qemu-kvm-integration-tests`
+          - `test_converting_readme`
+          - `tft`
+          - `woke`
+          - `codeql`
+          - `python-unit-test`
+          - `shellcheck`
+
+          Post another `/citest` comment at any time to run another selection.
+
+          <!-- lsr-citest-instructions -->
+          EOF
+          )"
