@@ -11,21 +11,16 @@ on:  # yamllint disable-line rule:truthy
   issue_comment:
     types:
       - created
-# permissions at job level override permissions at workflow level
-permissions:  # default low level permissions
+permissions:
   contents: read
 jobs:
   comment:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     steps:
       - name: Comment with CI instructions
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.number }}
         run: |
@@ -85,16 +80,10 @@ jobs:
                    github.event.comment.author_association)
           || github.event.comment.user.login == 'systemroller')
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
-      actions: write
-      deployments: write
     steps:
       - name: Approve waiting CI workflow runs
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.issue.number }}
           COMMENT_BODY: ${{ github.event.comment.body }}
