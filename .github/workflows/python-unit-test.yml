@@ -2,11 +2,25 @@
 # yamllint disable rule:line-length
 name: Python Unit Tests
 on:  # yamllint disable-line rule:truthy
-  pull_request:
+  workflow_call:
+    inputs:
+      approved:
+        description: Run after the protected-environment gate is approved
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
     types:
-      - opened
-      - synchronize
-      - reopened
+      - created
+  merge_group:
+    branches:
+      - main
+    types:
+      - checks_requested
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 permissions:
   contents: read
   pull-requests: read
@@ -14,6 +28,41 @@ permissions:
   statuses: write
 jobs:
   python:
+    if: |
+      inputs.approved || (
+      (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && (contains(github.event.comment.body, '[citest_all]')
+            || contains(github.event.comment.body, '[citest_python-unit-test]'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.comment.author_association)
+            || github.event.comment.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'opened'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_python-unit-test'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.pull_request.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'synchronize'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest_python-unit-test'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'labeled'
+        && (github.event.label.name == 'citest_all'
+            || github.event.label.name == 'citest_python-unit-test')
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ))
     strategy:
       matrix:
         pyver_os:
@@ -30,7 +79,6 @@ jobs:
           - ver: "3.13"
             os: ubuntu-latest
     runs-on: ${{ matrix.pyver_os.os }}
-    environment: citest
     steps:
       - name: Get PR head SHA and context
         if: github.event_name == 'issue_comment'
