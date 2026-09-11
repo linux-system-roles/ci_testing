@@ -149,7 +149,7 @@ jobs:
           status: pending
           context: ${{ steps.head_sha_context.outputs.context }}
           description: Test started
-          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Set variables with DATETIME and artifact location
         id: set_vars
@@ -172,7 +172,7 @@ jobs:
           status: success
           context: ${{ steps.head_sha_context.outputs.context }}
           description: The role does not support this platform. Skipping.
-          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Run test in testing farm
         uses: sclorg/testing-farm-as-github-action@230555baceb860aa468d216f1822974836b965d1  # v4.3.1
