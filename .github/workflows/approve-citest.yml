@@ -1,13 +1,20 @@
 ---
 # Generated with help by Cursor using model Cursor Grok 4.6
 # yamllint disable rule:line-length
+#
+# Security: pull_request_target is required so fork PRs can use
+# secrets.GH_PUSH_TOKEN (pull_request withholds repository secrets).
+# This workflow must NEVER check out, fetch, or execute pull request head
+# code, and must NEVER set allow-unsafe-pr-checkout. Only this file from
+# the base/default branch runs. Treat PR titles, bodies, and comments as
+# untrusted data: pass them through env, do not interpolate into run:.
+# GITHUB_TOKEN stays read-only; privileged API calls use GH_PUSH_TOKEN.
+# See https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
 name: Approve CI tests
 on:  # yamllint disable-line rule:truthy
-  pull_request:
+  pull_request_target:
     types:
       - opened
-      - synchronize
-      - reopened
   issue_comment:
     types:
       - created
@@ -15,16 +22,22 @@ permissions:
   contents: read
 jobs:
   comment:
-    if: github.event_name == 'pull_request'
+    if: |
+      github.event_name == 'pull_request_target'
+      && github.event.pull_request.base.ref == github.event.repository.default_branch
     runs-on: ubuntu-latest
     steps:
       - name: Comment with CI instructions
         env:
           GH_TOKEN: ${{ secrets.GH_PUSH_TOKEN }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid PR number" >&2
+            exit 1
+          fi
           gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
             --raw-field body="$(cat <<'EOF'
           Thank you for your submission.
@@ -36,7 +49,7 @@ jobs:
 
           If you want to run only individual CI tests, use one or more of the following:
 
-          `@coderabbitai review` - run AI review
+          `@` `coderabbitai review` - run AI review - remove the space between the `@` and `coderabbitai`
 
           `[citest_ansible-lint]` - run ansible-lint
 
@@ -92,6 +105,10 @@ jobs:
           WAIT_ATTEMPTS: "5"
         run: |
           set -euxo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid PR number" >&2
+            exit 1
+          fi
 
           comment_pr() {
             local body="$1"$'\n\n''<!-- lsr-approve-citest -->'
