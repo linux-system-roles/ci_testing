@@ -3,14 +3,10 @@ name: Ansible Test
 on:  # yamllint disable-line rule:truthy
   workflow_call:
     inputs:
-      approved:
-        description: Run after the protected-environment gate is approved
-        required: false
+      requested:
+        description: Run this workflow for an authorized /citest command
+        required: true
         type: boolean
-        default: false
-  issue_comment:
-    types:
-      - created
   merge_group:
     branches:
       - main
@@ -30,41 +26,7 @@ permissions:
   statuses: write
 jobs:
   ansible_test:
-    if: |
-      inputs.approved || (
-      (
-        github.event_name == 'issue_comment'
-        && github.event.issue.pull_request
-        && (contains(github.event.comment.body, '[citest_all]')
-            || contains(github.event.comment.body, '[citest_ansible-test]'))
-        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
-                     github.event.comment.author_association)
-            || github.event.comment.user.login == 'systemroller')
-      ) || (
-        github.event_name == 'pull_request'
-        && github.event.action == 'opened'
-        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
-            || contains(github.event.pull_request.labels.*.name, 'citest_ansible-test'))
-        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
-                     github.event.pull_request.author_association)
-            || github.event.pull_request.user.login == 'systemroller')
-      ) || (
-        github.event_name == 'pull_request'
-        && github.event.action == 'synchronize'
-        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
-            || contains(github.event.pull_request.labels.*.name, 'citest_ansible-test'))
-        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
-                     github.event.pull_request.author_association)
-            || github.event.sender.login == 'systemroller')
-      ) || (
-        github.event_name == 'pull_request'
-        && github.event.action == 'labeled'
-        && (github.event.label.name == 'citest_all'
-            || github.event.label.name == 'citest_ansible-test')
-        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
-                     github.event.pull_request.author_association)
-            || github.event.sender.login == 'systemroller')
-      ))
+    if: inputs.requested || github.event_name != 'issue_comment'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false  # get all results, not just the first failure
