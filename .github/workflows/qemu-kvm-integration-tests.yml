@@ -77,7 +77,7 @@ jobs:
           status: pending
           context: ${{ steps.head_sha_context.outputs.context }}
           description: Test started
-          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Checkout repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -275,7 +275,7 @@ jobs:
           status: ${{ job.status }}
           context: ${{ steps.head_sha_context.outputs.context }}
           description: Test finished
-          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Set commit status as success with a description that platform is skipped
         if: ${{ success() && github.event_name == 'issue_comment' && steps.check_platform.outputs.supported == '' }}
@@ -285,4 +285,4 @@ jobs:
           status: success
           context: ${{ steps.head_sha_context.outputs.context }}
           description: The role does not support this platform. Skipping.
-          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
