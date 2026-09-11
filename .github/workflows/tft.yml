@@ -1,11 +1,16 @@
 ---
 name: Run integration tests in Testing Farm
-on:  # yamllint disable-line rule:truthy
-  pull_request_target:
+on:
+  workflow_call:
+    inputs:
+      approved:
+        description: Run after the protected-environment gate is approved
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
     types:
-      - opened
-      - synchronize
-      - reopened
+      - created
 permissions:
   contents: read
   pull-requests: read
@@ -19,8 +24,48 @@ jobs:
       # group name contains reponame-pr_num to allow simultaneous runs in different PRs
       group: testing-farm-${{ github.event.repository.name }}-${{ github.event.issue.number || github.event.number }}
       cancel-in-progress: true
+    # Let's schedule tests only on user request. NOT automatically.
+    # Only repository owner or member can schedule tests
+    if: |
+      inputs.approved || (
+      (
+        github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && (contains(github.event.comment.body, '[citest_all]')
+            || contains(github.event.comment.body, '[citest]')
+            || contains(github.event.comment.body, '[citest_tft]'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.comment.author_association)
+            || github.event.comment.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'opened'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest')
+            || contains(github.event.pull_request.labels.*.name, 'citest_tft'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.pull_request.user.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'synchronize'
+        && (contains(github.event.pull_request.labels.*.name, 'citest_all')
+            || contains(github.event.pull_request.labels.*.name, 'citest')
+            || contains(github.event.pull_request.labels.*.name, 'citest_tft'))
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ) || (
+        github.event_name == 'pull_request'
+        && github.event.action == 'labeled'
+        && (github.event.label.name == 'citest_all'
+            || github.event.label.name == 'citest'
+            || github.event.label.name == 'citest_tft')
+        && (contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                     github.event.pull_request.author_association)
+            || github.event.sender.login == 'systemroller')
+      ))
     runs-on: ubuntu-latest
-    environment: citest
     outputs:
       supported_platforms: ${{ steps.supported_platforms.outputs.supported_platforms }}
       head_sha: ${{ steps.head_sha.outputs.head_sha || github.sha }}
@@ -113,7 +158,6 @@ jobs:
           - platform: CentOS-Stream-10
             ansible_version: "2.17"
     runs-on: ubuntu-latest
-    environment: citest
     env:
       ARTIFACTS_DIR_NAME: "tf_${{ github.event.repository.name }}-${{ github.event.issue.number || github.event.number }}_\
         ${{ matrix.platform }}-${{ matrix.ansible_version }}_\

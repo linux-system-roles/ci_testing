@@ -1,0 +1,101 @@
+---
+name: PR CI
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+# New commits cancel the previous run and require a new environment approval.
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+  security-events: write
+  statuses: write
+
+jobs:
+  approval:
+    name: Approve PR CI
+    environment: citest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record approval
+        run: echo "PR CI approved"
+
+  ansible_lint:
+    needs: approval
+    uses: ./.github/workflows/ansible-lint.yml
+    with:
+      approved: true
+
+  ansible_managed_var_comment:
+    needs: approval
+    uses: ./.github/workflows/ansible-managed-var-comment.yml
+    with:
+      approved: true
+
+  ansible_test:
+    needs: approval
+    uses: ./.github/workflows/ansible-test.yml
+    with:
+      approved: true
+
+  codespell:
+    needs: approval
+    uses: ./.github/workflows/codespell.yml
+    with:
+      approved: true
+
+  markdownlint:
+    needs: approval
+    uses: ./.github/workflows/markdownlint.yml
+    with:
+      approved: true
+
+  pr_title_lint:
+    needs: approval
+    uses: ./.github/workflows/pr-title-lint.yml
+    with:
+      approved: true
+
+  qemu_kvm_integration_tests:
+    needs: approval
+    uses: ./.github/workflows/qemu-kvm-integration-tests.yml
+    with:
+      approved: true
+
+  test_converting_readme:
+    needs: approval
+    uses: ./.github/workflows/test_converting_readme.yml
+    with:
+      approved: true
+
+  woke:
+    needs: approval
+    uses: ./.github/workflows/woke.yml
+    with:
+      approved: true
+
+  codeql:
+    needs: approval
+    uses: ./.github/workflows/codeql.yml
+    with:
+      approved: true
+
+  python_unit_test:
+    needs: approval
+    uses: ./.github/workflows/python-unit-test.yml
+    with:
+      approved: true
+
+  shellcheck:
+    needs: approval
+    uses: ./.github/workflows/shellcheck.yml
+    with:
+      approved: true
