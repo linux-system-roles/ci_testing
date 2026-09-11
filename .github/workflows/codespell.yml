@@ -41,7 +41,7 @@ jobs:
           status: pending
           context: ${{ steps.head_sha_context.outputs.context }}
           description: Test started
-          targetUrl: ""
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -60,4 +60,4 @@ jobs:
           status: ${{ job.status }}
           context: ${{ steps.head_sha_context.outputs.context }}
           description: Test finished
-          targetUrl: ""
+          targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

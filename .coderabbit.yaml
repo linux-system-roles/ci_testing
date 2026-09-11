@@ -3,7 +3,7 @@
 # Based on conventions from https://linux-system-roles.github.io/contribute.html
 # This file is managed from https://github.com/linux-system-roles/.github,
 # any manual edits will be overwritten.
-
+---
 chat:
   art: false
 
