@@ -51,7 +51,7 @@ jobs:
           command_line=${COMMENT_BODY%%$'\n'*}
           read -r -a words <<<"$command_line"
           if [ "${words[0]-}" != /citest ] || [ -z "${words[1]-}" ]; then
-            echo 'Usage: /citest all | /citest WORKFLOW [WORKFLOW ...]' >&2
+            echo 'Usage: /citest all | /citest linters | /citest integration | /citest WORKFLOW [WORKFLOW ...]' >&2
             exit 1
           fi
 
@@ -71,13 +71,41 @@ jobs:
             shellcheck
           )
 
+          linters=(
+            ansible-lint
+            ansible-managed-var-comment
+            ansible-test
+            codespell
+            markdownlint
+            pr-title-lint
+            test_converting_readme
+            codeql
+            python-unit-test
+            shellcheck
+          )
+
+          integration=(
+            qemu-kvm-integration-tests
+            tft
+          )
+
           requested=("${words[@]:1}")
           selected=()
           unknown=()
           select_all=false
+          select_linters=false
+          select_integration=false
           for request in "${requested[@]}"; do
             if [ "$request" = all ]; then
               select_all=true
+              continue
+            fi
+            if [ "$request" = linters ]; then
+              select_linters=true
+              continue
+            fi
+            if [ "$request" = integration ]; then
+              select_integration=true
               continue
             fi
             found=false
@@ -95,11 +123,18 @@ jobs:
 
           if [ -n "${unknown[*]-}" ]; then
             printf 'Unknown workflow: %s\n' "${unknown[@]}" >&2
-            printf 'Known workflows: %s\n' "${known[*]}" >&2
+            printf 'Known workflows: %s all linters integration\n' "${known[*]}" >&2
             exit 1
           fi
           if [ "$select_all" = true ]; then
             selected=("${known[@]}")
+          else
+            if [ "$select_linters" = true ]; then
+              selected+=("${linters[@]}")
+            fi
+            if [ "$select_integration" = true ]; then
+              selected+=("${integration[@]}")
+            fi
           fi
 
           selected_json=$(printf '%s\n' "${selected[@]}" \

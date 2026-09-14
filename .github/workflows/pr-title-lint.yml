@@ -11,11 +11,6 @@ on:  # yamllint disable-line rule:truthy
         description: Pull request title to validate
         required: true
         type: string
-  merge_group:
-    branches:
-      - main
-    types:
-      - checks_requested
 permissions:
   contents: read
   pull-requests: read
