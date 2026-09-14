@@ -7,15 +7,6 @@ on:  # yamllint disable-line rule:truthy
         description: Run this workflow for an authorized /citest command
         required: true
         type: boolean
-  merge_group:
-    branches:
-      - main
-    types:
-      - checks_requested
-  push:
-    branches:
-      - main
-  workflow_dispatch:
 env:
   LSR_ROLE2COLL_NAMESPACE: fedora
   LSR_ROLE2COLL_NAME: linux_system_roles
