@@ -72,10 +72,8 @@ jobs:
           | `/citest qemu-kvm-integration-tests` | `Test / scenario (<image>, <env>) (pull_request)` | Run role integration tests in QEMU VMs and containers |
           | `/citest test_converting_readme` | `Test converting README.md to README.html / test_converting_readme (pull_request)` | Convert README.md to HTML |
           | `/citest tft` | `<platform>\|ansible-<version>` | Run integration tests in Testing Farm |
-          | `/citest woke` | `Woke / Detect non-inclusive language (pull_request)` | Detect non-inclusive language |
-| `/citest codeql` | `CodeQL / Analyze (python) (pull_request)` | CodeQL security and quality analysis for Python |
-          | `/citest python-unit-test` | `Python Unit Tests / python (<python>, <os>) (pull_request)` | Run Python unit tests |
-| `/citest shellcheck` | `ShellCheck / shellcheck (pull_request)` | Lint shell scripts |
+          | `/citest woke` | `Woke / Detect non-inclusive language (pull_request)` | Detect non-inclusive language |          | `/citest codeql` | `CodeQL / Analyze (python) (pull_request)` | CodeQL security and quality analysis for Python |
+          | `/citest python-unit-test` | `Python Unit Tests / python (<python>, <os>) (pull_request)` | Run Python unit tests |          | `/citest shellcheck` | `ShellCheck / shellcheck (pull_request)` | Lint shell scripts |
 
           Post another `/citest` comment at any time to run another selection.
 
