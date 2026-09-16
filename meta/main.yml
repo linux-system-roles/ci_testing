@@ -12,8 +12,12 @@ galaxy_info:
         - all
     - name: EL
       versions:
+        - "7"
+        - "8"
         - "9"
   galaxy_tags:
+    - el7
+    - el8
     - el9
     - el10
     - fedora
