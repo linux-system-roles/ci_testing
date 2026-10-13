@@ -35,7 +35,7 @@ jobs:
 
       - name: Set commit status as pending
         if: github.event_name == 'issue_comment'
-        uses: linux-system-roles/.github/github-actions/commit-status@main
+        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: pending
@@ -44,7 +44,7 @@ jobs:
           targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Checkout
-        uses: linux-system-roles/.github/github-actions/checkout@main
+        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
         with:
           persist-credentials: false
           ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Set final commit status
         if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != ''
-        uses: linux-system-roles/.github/github-actions/commit-status@main
+        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: ${{ job.status }}
