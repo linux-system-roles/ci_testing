@@ -5,45 +5,45 @@ version: 'v0.0.3'
 workflows:
     '.github/workflows/ansible-lint.yml':
         - 'actions/setup-python@v7.0.0'
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/ansible-managed-var-comment.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/ansible-test.yml':
         - 'actions/setup-python@v7.0.0'
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/build_docs.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/changelog_to_tag.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/citest-instructions.yml': []
     '.github/workflows/citest.yml': []
     '.github/workflows/codeql.yml':
         - 'github/codeql-action@v4.38.3'
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/codespell.yml':
         - 'codespell-project/actions-codespell@v2.4.3'
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/markdownlint.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/periodic_ci.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/pr-title-lint.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/python-unit-test.yml':
         - 'actions/setup-python@v7.0.0'
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/qemu-kvm-integration-tests.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/shellcheck.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/test_converting_readme.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
     '.github/workflows/tft.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
         - 'sclorg/testing-farm-as-github-action@v4.3.1'
     '.github/workflows/tft_citest_bad.yml': []
     '.github/workflows/woke.yml':
-        - 'linux-system-roles/.github@main'
+        - 'richm/lsr_.github@custom-lsr-actions'
 dependencies:
     'actions/setup-python@v7.0.0':
         ref: 'v7.0.0'
@@ -60,11 +60,11 @@ dependencies:
         commit: 'sha1-24c54180a607b1449ed407dd24f251e4e9147c8d'
         owner_id: 9919
         repo_id: 259445878
-    'linux-system-roles/.github@main':
-        ref: 'main'
-        commit: 'sha1-59d7d9d587cd6c80cedf424d2547c8d19a08c721'
-        owner_id: 28014670
-        repo_id: 320092621
+    'richm/lsr_.github@custom-lsr-actions':
+        ref: 'custom-lsr-actions'
+        commit: 'sha1-e778056482b5f61e9355b9a4c773421fd161a10a'
+        owner_id: 23066
+        repo_id: 320093898
     'sclorg/testing-farm-as-github-action@v4.3.1':
         ref: 'v4.3.1'
         commit: 'sha1-230555baceb860aa468d216f1822974836b965d1'

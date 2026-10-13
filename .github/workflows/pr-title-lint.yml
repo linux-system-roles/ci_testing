@@ -19,7 +19,7 @@ jobs:
     if: inputs.requested || github.event_name != 'issue_comment'
     runs-on: ubuntu-latest
     steps:
-      - uses: linux-system-roles/.github/github-actions/checkout@main
+      - uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
         with:
           persist-credentials: false
           fetch-depth: 0
