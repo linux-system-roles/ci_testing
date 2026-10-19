@@ -44,7 +44,7 @@ jobs:
           targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Checkout
-        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}

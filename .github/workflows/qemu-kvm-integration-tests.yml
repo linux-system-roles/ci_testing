@@ -72,7 +72,7 @@ jobs:
           targetUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
 
       - name: Checkout repo
-        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}
@@ -235,7 +235,7 @@ jobs:
 
       - name: Upload test logs on failure
         if: failure()
-        uses: richm/lsr_.github/github-actions/upload-artifact@custom-lsr-actions
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: "logs-${{ matrix.scenario.image }}-${{ matrix.scenario.env }}"
           path: |
