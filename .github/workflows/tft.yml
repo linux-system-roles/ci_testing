@@ -56,7 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout PR
-        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.head_sha.outputs.head_sha || github.sha }}

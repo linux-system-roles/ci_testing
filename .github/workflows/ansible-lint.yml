@@ -60,7 +60,7 @@ jobs:
           sudo apt install -y git
 
       - name: Checkout repo
-        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           ref: ${{ steps.head_sha_context.outputs.head_sha || github.sha }}

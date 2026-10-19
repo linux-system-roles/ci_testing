@@ -22,7 +22,7 @@ jobs:
           sudo apt install -y git
 
       - name: checkout PR
-        uses: richm/lsr_.github/github-actions/checkout@custom-lsr-actions
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
