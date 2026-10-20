@@ -38,7 +38,7 @@ jobs:
 
       - name: Set commit status as pending
         if: github.event_name == 'issue_comment'
-        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/commit-status@main
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: pending
@@ -62,7 +62,7 @@ jobs:
         run: sed -i '1,8 {/^\[\!.*actions\/workflows/d}' README.md
 
       - name: Convert README.md to HTML
-        uses: richm/lsr_.github/github-actions/pandoc@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/pandoc@main
         with:
           image: pandoc/core@sha256:62518bfb6833705dc90a1634d8d879299bd820b3f74ad3b32fba8b618452553a
           args: >-
@@ -78,7 +78,7 @@ jobs:
 
       - name: Set final commit status
         if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != ''
-        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/commit-status@main
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: ${{ job.status }}

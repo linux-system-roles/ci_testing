@@ -35,7 +35,7 @@ jobs:
 
       - name: Set commit status as pending
         if: github.event_name == 'issue_comment'
-        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/commit-status@main
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: pending
@@ -51,7 +51,7 @@ jobs:
 
       - name: Run lsr-woke-action
         # Originally, uses: get-woke/woke-action@v0
-        uses: richm/lsr_.github/github-actions/woke@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/woke@main
         with:
           woke-args: "-c https://raw.githubusercontent.com/linux-system-roles/tox-lsr/main/src/tox_lsr/config_files/woke.yml --count-only-error-for-failure"
           # Cause the check to fail on any broke rules
@@ -59,7 +59,7 @@ jobs:
 
       - name: Set final commit status
         if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != ''
-        uses: richm/lsr_.github/github-actions/commit-status@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/commit-status@main
         with:
           sha: ${{ steps.head_sha_context.outputs.head_sha }}
           status: ${{ job.status }}
