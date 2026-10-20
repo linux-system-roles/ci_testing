@@ -71,7 +71,7 @@ jobs:
           echo "tagname=$_tagname" >> "$GITHUB_OUTPUT"
           echo "branch=$_branch" >> "$GITHUB_OUTPUT"
       - name: Create tag
-        uses: richm/lsr_.github/github-actions/tag@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/tag@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.tag.outputs.tagname }}
@@ -79,7 +79,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: richm/lsr_.github/github-actions/release@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/release@main
         with:
           tag: ${{ steps.tag.outputs.tagname }}
           name: Version ${{ steps.tag.outputs.tagname }}
@@ -87,7 +87,7 @@ jobs:
           makeLatest: true
 
       - name: Publish role to Galaxy
-        uses: richm/lsr_.github/github-actions/galaxy-import@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/galaxy-import@main
         with:
           galaxy_api_key: ${{ secrets.galaxy_api_key }}
           git_branch: ${{ steps.tag.outputs.branch }}

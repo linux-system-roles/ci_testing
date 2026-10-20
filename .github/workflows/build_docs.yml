@@ -52,7 +52,7 @@ jobs:
         run: sed -i '1,8 {/^\[\!.*actions\/workflows/d}' README.md
 
       - name: Convert README.md to HTML and save to the version directory
-        uses: richm/lsr_.github/github-actions/pandoc@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/pandoc@main
         with:
           args: >-
             --from gfm --to html5 --toc --shift-heading-level-by=-1
@@ -146,7 +146,7 @@ jobs:
           git commit -m "Update README.html for ${{ env.RELEASE_VERSION }}"
 
       - name: Push changes
-        uses: richm/lsr_.github/github-actions/git-push@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/git-push@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: docs

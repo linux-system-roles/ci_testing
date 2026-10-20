@@ -53,7 +53,7 @@ jobs:
           git push -f --set-upstream origin ${{ env.BRANCH_NAME }}
 
       - name: Create and comment pull request
-        uses: richm/lsr_.github/github-actions/periodic-ci-pr@custom-lsr-actions
+        uses: linux-system-roles/.github/github-actions/periodic-ci-pr@main
         with:
           github-token: ${{ secrets.GH_PUSH_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
