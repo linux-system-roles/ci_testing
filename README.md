@@ -7,7 +7,7 @@
 A template for an ansible role that configures some GNU/Linux subsystem or
 service. A brief description of the role goes here.
 
-test custom lsr actions
+test package_retry
 
 ## Requirements
 
