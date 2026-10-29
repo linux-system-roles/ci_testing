@@ -49,7 +49,7 @@ prepare:
           plugin_conf_dir=/etc/yum/pluginconf.d
           ;;
         centos:8)
-          plugin_dir=$(/usr/libexec/platform-python -c 'import dnf; print(dnf.Base().conf.pluginpath[0])')
+          plugin_dir=$(/usr/libexec/platform-python -c 'import sysconfig; print(sysconfig.get_path("purelib") + "/dnf-plugins")')
           plugin_conf_dir=/etc/dnf/plugins
           ;;
         *) exit 0 ;;
