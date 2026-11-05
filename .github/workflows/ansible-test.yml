@@ -62,6 +62,12 @@ jobs:
           sudo apt update
           sudo apt install -y git
 
+      # there seems to be some problem running the ansible-test 2.22 container
+      # with docker - so use podman and alias docker to podman
+      - name: Install podman-docker
+        if: matrix.versions.ansible == '2-22'
+        run: sudo apt install -y podman-docker
+
       - name: Checkout repo
         uses: actions/checkout@v7.0.1
         with:
