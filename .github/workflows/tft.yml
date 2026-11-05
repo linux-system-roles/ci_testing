@@ -107,10 +107,10 @@ jobs:
       matrix:
         include:
           # Ensure ansible version is a string!
-          - platform: Fedora-43
-            ansible_version: "2.20"
           - platform: Fedora-44
             ansible_version: "2.21"
+          - platform: Fedora-45
+            ansible_version: "2.22"
           - platform: CentOS-7-latest
             ansible_version: "2.9"
           - platform: CentOS-Stream-8
