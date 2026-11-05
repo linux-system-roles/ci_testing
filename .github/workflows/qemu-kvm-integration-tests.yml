@@ -26,7 +26,7 @@ jobs:
           - { image: "centos-9", env: "qemu-ansible-core-2-16" }
           - { image: "centos-10", env: "qemu-ansible-core-2-17" }
           - { image: "fedora-44", env: "qemu-ansible-core-2-21" }
-          - { image: "fedora-45", env: "qemu-ansible-core-2-22" }
+          - { image: "fedora-45", env: "qemu-ansible-core-2-22", python: "3.13" }
           - { image: "leap-15.6", env: "qemu-ansible-core-2-18" }
           - { image: "leap-16.0", env: "qemu-ansible-core-2-20" }
 
@@ -37,11 +37,11 @@ jobs:
           # - { image: "centos-10", env: "container-ansible-core-2-17" }
           - { image: "centos-10-bootc", env: "container-ansible-core-2-17" }
           - { image: "fedora-44", env: "container-ansible-core-2-21" }
-          - { image: "fedora-45", env: "container-ansible-core-2-22" }
+          - { image: "fedora-45", env: "container-ansible-core-2-22", python: "3.13" }
           # ansible-core 2.21 cannot enable services using service module in bootc images
           - { image: "fedora-44-bootc", env: "container-ansible-core-2-20" }
           # fedora-45 requires ansible-core 2.22
-          - { image: "fedora-45-bootc", env: "container-ansible-core-2-22" }
+          - { image: "fedora-45-bootc", env: "container-ansible-core-2-22", python: "3.13" }
 
     env:
       TOX_ARGS: "--skip-tags tests::infiniband,tests::nvme,tests::scsi"
@@ -127,6 +127,12 @@ jobs:
         run: |
           echo "set man-db/auto-update false" | sudo debconf-communicate
           sudo dpkg-reconfigure man-db
+
+      - name: Set up Python
+        if: steps.check_platform.outputs.supported && matrix.scenario.python != ''
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: ${{ matrix.scenario.python }}
 
       - name: Install test dependencies
         if: steps.check_platform.outputs.supported
