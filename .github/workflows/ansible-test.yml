@@ -18,18 +18,18 @@ permissions:
 jobs:
   ansible_test:
     if: inputs.requested || github.event_name != 'issue_comment'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.versions.runner_os }}
     strategy:
       fail-fast: false  # get all results, not just the first failure
       matrix:
         versions:
-          - { ansible: "2-14", python: "3.9" }
-          - { ansible: "2-16", python: "3.11" }
-          - { ansible: "2-17", python: "3.12" }
-          - { ansible: "2-20", python: "3.13" }
-          - { ansible: "2-21", python: "3.13" }
-          - { ansible: "2-22", python: "3.14" }
-          - { ansible: "milestone", python: "3.14" }
+          - { ansible: "2-14", python: "3.9", runner_os: "ubuntu-latest" }
+          - { ansible: "2-16", python: "3.11", runner_os: "ubuntu-latest" }
+          - { ansible: "2-17", python: "3.12", runner_os: "ubuntu-latest" }
+          - { ansible: "2-20", python: "3.13", runner_os: "ubuntu-latest" }
+          - { ansible: "2-21", python: "3.13", runner_os: "ubuntu-latest" }
+          - { ansible: "2-22", python: "3.14", runner_os: "ubuntu-26.04" }
+          - { ansible: "milestone", python: "3.14", runner_os: "ubuntu-latest" }
     steps:
       - name: Get PR head SHA and context
         if: github.event_name == 'issue_comment'
