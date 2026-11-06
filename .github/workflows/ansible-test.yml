@@ -62,17 +62,6 @@ jobs:
           sudo apt update
           sudo apt install -y git
 
-      # there seems to be some problem running the ansible-test 2.22 container
-      # with docker - so use podman and alias docker to podman
-      - name: Install podman-docker
-        if: matrix.versions.ansible == '2-22'
-        run: |
-          sudo apt install -y podman-docker
-          # due to bug https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
-          # apparmor causes an error when podman stops the container - so disable
-          # apparmor in this case
-          sudo aa-teardown
-
       - name: Checkout repo
         uses: actions/checkout@v7.0.1
         with:
@@ -93,10 +82,23 @@ jobs:
         run: tox -e collection
 
       - name: Run ansible-test
+        if: matrix.versions.ansible != '2-22'
         run: |
           tox \
             -x testenv:ansible-test-${{ matrix.versions.ansible }}.basepython="python${{ matrix.versions.python }}" \
             -e ansible-test-${{ matrix.versions.ansible }}
+
+      # https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
+      - name: Run ansible-test 2.22 without a container
+        if: matrix.versions.ansible == '2-22'
+        run: |
+          set -euo pipefail
+          python -m pip install 'ansible-core==2.22.*'
+          tempdir=$(mktemp -d)
+          trap 'rm -rf "$tempdir"' EXIT
+          cp -a .tox/ansible_collections "$tempdir/"
+          cd "$tempdir/ansible_collections/fedora/linux_system_roles"
+          ansible-test sanity
 
       - name: Set final commit status
         if: always() && github.event_name == 'issue_comment' && steps.head_sha_context.outputs.head_sha != ''
