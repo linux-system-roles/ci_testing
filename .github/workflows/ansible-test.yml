@@ -71,7 +71,7 @@ jobs:
           # due to bug https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
           # apparmor causes an error when podman stops the container - so disable
           # apparmor in this case
-          aa-teardown
+          sudo aa-teardown
 
       - name: Checkout repo
         uses: actions/checkout@v7.0.1
