@@ -1,168 +1,207 @@
-# ci_testing
+# ci_testing role -- Configure the GRUB2 boot loader
 
-[![citest.yml](https://github.com/linux-system-roles/ci_testing/actions/workflows/citest.yml/badge.svg)](https://github.com/linux-system-roles/ci_testing/actions/workflows/citest.yml)
+This role is part of the [fedora.linux_system_roles collection](https://galaxy.ansible.com/ui/repo/published/fedora/linux_system_roles/).
 
-![ci_testing](https://github.com/linux-system-roles/ci_testing/workflows/tox/badge.svg)
+It is not included in `ansible-core`. To check whether it is installed, run `ansible-galaxy collection list`.
 
-A template for an ansible role that configures some GNU/Linux subsystem or
-service. A brief description of the role goes here.
+To install it use: `ansible-galaxy collection install fedora.linux_system_roles`.
 
-test package_retry 3
+To use it in a playbook, specify: `fedora.linux_system_roles.ci_testing`.
 
-## Requirements
+- [Entry point `main` -- Configure the GRUB2 boot loader](#entry-point-main----configure-the-grub2-boot-loader)
 
-Any prerequisites that may not be covered by Ansible itself or the role should
-be mentioned here.  This includes platform dependencies not managed by the
-role, hardware requirements, external collections, etc.  There should be a
-distinction between *control node* requirements (like collections) and
-*managed node* requirements (like special hardware, platform provisioning).
+  - [Synopsis](#synopsis)
 
-### Collection requirements
+  - [Parameters](#parameters)
 
-For instance, if the role depends on some collections and has a
-`meta/collection-requirements.yml` file for installing those dependencies, and
-in order to manage `rpm-ostree` systems, it should be mentioned here that the
- user should run
+  - [Attributes](#attributes)
 
-```bash
-ansible-galaxy collection install -vv -r meta/collection-requirements.yml
-```
+  - [Notes](#notes)
 
-on the *control node* before using the role.
+  - [Examples](#examples)
 
-## Role Variables
+  - [Return Variables](#return-variables)
 
-Validation is enforced by `meta/argument_specs.yml`.
+  - [Authors](#authors)
 
-A description of all input variables (i.e. variables that are defined in
-`defaults/main.yml`) for the role should go here as these form an API of the
-role.  Each variable should have its own section e.g.
+## Entry point `main` -- Configure the GRUB2 boot loader
 
-### ci_testing_foo
+### Synopsis
 
-A string variable for the foo setting.
-The default value is `"foo"`.
+- The `bootloader` role manages GRUB2 boot loader settings: kernel command line parameters, the boot loader timeout, and the boot loader password.
 
-### ci_testing_bar
+- **Considerations**: Fedora 42 (`grubby-8.40-82.fc42.x86_64`) introduced a bug, [BZ#2361624](https://bugzilla.redhat.com/show_bug.cgi?id=2361624), that changes the default kernel to a newly added kernel. To keep a specific kernel as the default, set `default: true` for that kernel in the **`bootloader_settings`** variable.
 
-A boolean variable that enables or disables the bar feature.
-The default value is `true`.
+- **Collection requirements**: To manage `rpm-ostree` systems, the role needs extra modules from external collections. Install them with `ansible-galaxy collection install -vv -r meta/collection-requirements.yml`. Non-ostree systems need no extra collections.
 
-### ci_testing_baz
+- For `rpm-ostree` systems, see the `README-ostree.md` file in the role.
 
-An integer variable for a numeric setting.
-The default value is `0`.
+### Parameters
 
-### ci_testing_config_path
+| Parameter                                            | Comments |
+| ---------------------------------------------------- | --- |
+| **bootloader_gather_facts** *boolean*                | Whether to gather bootloader facts containing boot information for all kernels. The role returns the facts in the `bootloader_facts` variable. **Choices:** `false` (default), `true` |
+| **bootloader_password** *any*                        | The password to protect boot parameters. When set to `null` or left unset, the role leaves the current password unchanged. The boot loader username is always `root`. Store this value in Ansible Vault. Changing the password is **not** idempotent; use **`bootloader_password_hash`** for idempotent password configuration. You cannot set this variable together with **`bootloader_password_hash`**. |
+| **bootloader_password_hash** *any*                   | Precomputed GRUB PBKDF2 SHA512 password hash for the root boot loader user. Generate the hash with `grub2-mkpasswd-pbkdf2` and store it in Ansible Vault. Supply only the resulting `grub.pbkdf2.sha512...` hash, without the command's explanatory text or a trailing newline. The hash must have a positive iteration count, a nonempty hexadecimal salt consisting of whole bytes, and a 64-byte hexadecimal digest. Setting the same hash repeatedly is idempotent. When `null` or unset, the role writes no hash. An empty string is invalid; to remove a password set **`bootloader_remove_password`**=`true` with this variable unset or `null`. You cannot combine it with **`bootloader_password`** or **`bootloader_remove_password`**=`true`. |
+| **bootloader_reboot_ok** *boolean*                   | Whether the role is allowed to reboot the managed host when changes require a reboot to take effect. If `false`, the role sets `bootloader_reboot_required` to `true` instead. **Choices:** `false` (default), `true` |
+| **bootloader_remove_password** *boolean*             | Whether to remove the boot loader password configuration. **Choices:** `false` (default), `true` |
+| **bootloader_secure_logging** *boolean*              | Whether to suppress potentially sensitive output from tasks that handle credentials by setting `no_log` to `true` on those tasks. **Choices:** `false`, `true` (default) |
+| **bootloader_settings** *list / elements=dictionary* | List of kernel entries and their command line parameters to configure. Each entry specifies a kernel and the boot loader settings to apply. **Default:** `[]` |
+| - **default** *boolean*                              | Whether to make this kernel the default boot entry. **Choices:** `false` (default), `true` |
+| - **kernel** *any / required*                        | The kernel to update settings for. Accepts the string `DEFAULT` or `ALL` to target the default or all kernels, or a dictionary with keys `path`, `index`, `title`, and `initrd` to identify a specific kernel. To modify or remove a kernel, specify one or more of these keys; to add a kernel, specify `path`, `title`, and `initrd`. |
+| - **options** *list / elements=dictionary*           | List of boot loader arguments to apply to the specified kernel. |
+| - - **copy_default** *boolean*                       | Whether to copy the default arguments to the created kernel. **Choices:** `false` (default), `true` |
+| - - **name** *string*                                | The name of the boot loader setting. Not required when using `previous: replaced`. |
+| - - **previous** *string*                            | Whether to replace all previous settings with the given settings. The only supported value is `replaced`. **Choices:** `"replaced"` |
+| - - **state** *string*                               | Whether the setting is `present` or `absent`. `absent` removes the setting with the given `name`. **Choices:** `"present"` (default), `"absent"` |
+| - - **value** *any*                                  | The value for the setting. Not required when the setting has no value, for example `quiet`. The value must not be a YAML boolean; quote values such as `value: "on"` that YAML would parse as a boolean. The value must also not be null; `value:`, `value: ~`, and `value: null` raise an error. |
+| - **state** *string*                                 | Whether to keep the kernel entry (`present`) or remove it (`absent`). **Choices:** `"present"` (default), `"absent"` |
+| **bootloader_timeout** *any*                         | The GRUB boot loader timeout in seconds. When set to `null` or left unset, the role does not change the timeout setting. |
 
-Filesystem path to the configuration file.
-The default value is `"/etc/ci_testing.conf"`.
+### Attributes
 
-### ci_testing_state
+| Attribute         | Support                                                                                                                                                                                                                                                                                                      | Description |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| **architectures** | **partial** `x86-64` - supported `ARMv8.0` - supported `POWER9` - supported `s390x` - not supported                                                                                                                                                                                                          | CPU architectures the role can run on. |
+| **check_mode**    | **none** The role does not support check mode.                                                                                                                                                                                                                                                               | Can run in `check_mode` and return a changed-status prediction without modifying the target. |
+| **idempotent**    | **partial** Kernel command line parameters, the boot loader timeout, and **`bootloader_password_hash`** are applied idempotently. **`bootloader_password`** is **not** idempotent; each run regenerates and rewrites the password. Use **`bootloader_password_hash`** for idempotent password configuration. | When run twice in a row outside check mode with the same arguments, the second run reports no change. This assumes the managed host has not changed in a relevant way between runs. |
+| **platforms**     | **full** `Fedora` `RHEL` `CentOS`                                                                                                                                                                                                                                                                            | Target operating systems. |
 
-Desired state of the ci_testing subsystem.  Must be one of `enabled`
-or `disabled`.  The default value is `"enabled"`.
+### Notes
 
-### ci_testing_packages
+- When setting a kernel option value in **`bootloader_settings`**, the value must not be a [YAML bool type](https://yaml.org/type/bool.html). Quote values such as `value: on` as `value: "on"`, or otherwise pass them as `str`. A value must also not be `null`: `value:`, `value: ~`, and `value: null` are not allowed and raise an error.
 
-A list of package names (strings).
-The default value is `[]`.
-
-### ci_testing_raw_value
-
-A variable that accepts values of different types (e.g. a string or a list).
-The default value is `""`.
-
-### ci_testing_services
-
-A list of service configurations.  Each entry is a dictionary with the
-following keys:
-
-| Key | Type | Required | Description |
-|-----|------|----------|-------------|
-| `name` | str | yes | Name of the service. |
-| `type` | str | no | Type of the service.  One of `simple`, `forking`, `oneshot`. |
-| `enabled` | bool | no | Whether the service should be enabled at boot. |
-
-The default value is `[]`.
-
-Variables that are not intended as input, like variables defined in
-`vars/main.yml`, variables that are read from other roles and/or the global
-scope (ie. hostvars, group vars, etc.) can be also mentioned here but keep in
-mind that as these are probably not part of the role API they may change during
-the lifetime.
-
-Example of setting the variables:
+### Examples
 
 ```yaml
-ci_testing_foo: "oof"
-ci_testing_bar: false
-ci_testing_baz: 42
-ci_testing_config_path: /etc/myapp/config.yml
-ci_testing_state: disabled
-ci_testing_packages:
-  - vim
-  - tmux
-ci_testing_raw_value:
-  - first
-  - second
-ci_testing_services:
-  - name: httpd
-    type: forking
-    enabled: true
-  - name: my-worker
-    type: simple
-```
-
-## Variables Exported by the Role
-
-This section is optional.  Some roles may export variables for playbooks to
-use later.  These are analogous to "return values" in Ansible modules.  For
-example, if a role performs some action that will require a system reboot, but
-the user wants to defer the reboot, the role might set a variable like
-`ci_testing_reboot_needed: true` that the playbook can use to reboot at a more
-convenient time.
-
-Example:
-
-### ci_testing_reboot_needed
-
-Default `false` - if `true`, this means a reboot is needed to apply the changes
-made by the role
-
-## Example Playbook
-
-Including an example of how to use your role (for instance, with variables
-passed in as parameters) is always nice for users too:
-
-```yaml
-- name: Manage the ci_testing subsystem
+- name: Manage kernels by path, index, and title, and add, remove, and copy defaults
   hosts: all
   vars:
-    ci_testing_foo: "foo foo!"
-    ci_testing_bar: false
-    ci_testing_baz: 42
-    ci_testing_state: disabled
-    ci_testing_services:
-      - name: httpd
-        type: forking
-        enabled: true
+    bootloader_settings:
+      # Update an existing kernel using path and replacing previous settings
+      - kernel:
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
+        options:
+          - name: console
+            value: tty0
+            state: present
+          - previous: replaced
+        default: false
+      # Update an existing kernel using index
+      - kernel:
+          index: 1
+        options:
+          - name: print-fatal-signals
+            value: 1
+        default: true
+      # Update an existing kernel using title
+      - kernel:
+          title: Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8
+        options:
+          - name: no_timer_check
+        state: present
+      # Add a kernel with arguments
+      - kernel:
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
+          initrd: /boot/initramfs-6.5.7-100.fc37.x86_64.img
+          title: My kernel
+        options:
+          - name: console
+            value: tty0
+          - name: print-fatal-signals
+            value: 1
+          - name: no_timer_check
+            state: present
+        state: present
+      # Add a kernel with arguments and copying default arguments
+      - kernel:
+          path: /boot/vmlinuz-6.5.7-100.fc37.x86_64
+          initrd: /boot/initramfs-6.5.7-100.fc37.x86_64.img
+          title: My kernel
+        options:
+          - name: console
+            value: tty0
+          - copy_default: true
+        state: present
+      # Remove a kernel
+      - kernel:
+          title: My kernel
+        state: absent
+      # Update all kernels
+      - kernel: ALL
+        options:
+          - name: debug
+            state: present
+      # Update the default kernel
+      - kernel: DEFAULT
+        options:
+          - name: quiet
+            state: present
+    bootloader_timeout: 5
+    bootloader_reboot_ok: true
   roles:
-    - linux-system-roles.ci_testing
+    - linux-system-roles.bootloader
+
+- name: Gather bootloader facts for all kernels without making changes
+  hosts: all
+  vars:
+    bootloader_gather_facts: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Set a bootloader password (pull the value from Ansible Vault)
+  hosts: all
+  vars:
+    bootloader_password: "{{ vault_bootloader_password }}"
+    bootloader_secure_logging: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Set an idempotent password hash from grub2-mkpasswd-pbkdf2
+  hosts: all
+  vars:
+    bootloader_password_hash: "{{ vault_bootloader_password_hash }}"
+    bootloader_secure_logging: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Remove the bootloader password
+  hosts: all
+  vars:
+    bootloader_remove_password: true
+  roles:
+    - linux-system-roles.bootloader
+
+- name: Allow the role to reboot the host automatically
+  hosts: all
+  vars:
+    bootloader_reboot_ok: true
+    bootloader_settings:
+      - kernel: DEFAULT
+        options:
+          - name: crashkernel
+            value: 512M
+  roles:
+    - linux-system-roles.bootloader
 ```
 
-More examples can be provided in the [`examples/`](examples) directory. These
-can be useful, especially for documentation.
+### Return Variables
 
-## rpm-ostree
+The following variables are set by this role:
 
-See README-ostree.md
+| Key                                               | Description |
+| ------------------------------------------------- | --- |
+| **bootloader_facts** *list / elements=dictionary* | Boot information for all kernels, as gathered by the `bootloader_facts` module. The role sets this in `ansible_facts` and also copies it to the `bootloader_facts` variable. **Returned:** When **`bootloader_gather_facts`** is `true`. **Sample:** `[{"args": "ro rootflags=subvol=root console=tty0 quiet", "default": true, "id": "890cea0fd7b140cf890eb0145b3caa72-6.6.4-100.fc38.x86_64", "index": "1", "initrd": "/boot/initramfs-6.6.4-100.fc38.x86_64.img", "kernel": "/boot/vmlinuz-6.6.4-100.fc38.x86_64", "root": "UUID=2b95a97a-3f73-4566-b0a3-a11b4e9c3663", "title": "Fedora Linux (6.6.4-100.fc38.x86_64) 38 (Cloud Edition)"}]` |
+| - **args** *string*                               | Command line arguments passed to the kernel. **Returned:** success |
+| - **default** *boolean*                           | Whether this kernel is the default boot entry. **Returned:** success |
+| - **id** *string*                                 | The kernel ID. **Returned:** success |
+| - **index** *string*                              | The kernel index. **Returned:** success |
+| - **initrd** *string*                             | Path to the kernel initrd image. **Returned:** success |
+| - **kernel** *string*                             | Path to the kernel image. **Returned:** success |
+| - **root** *string*                               | The root device for this kernel. **Returned:** success |
+| - **title** *string*                              | The boot entry title. **Returned:** success |
+| **bootloader_reboot_required** *boolean*          | `true` means the host must reboot to apply the role's changes. The role sets this when **`bootloader_reboot_ok`** is `false` and it made changes. **Returned:** always **Sample:** `true` |
 
-## License
+### Authors
 
-Whenever possible, please prefer MIT.
-
-## Author Information
-
-An optional section for the role authors to include contact information, or a
-website (HTML is not allowed).
+- Sergei Petrosian (@spetrosi)
