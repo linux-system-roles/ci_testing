@@ -87,7 +87,10 @@ jobs:
         if: matrix.versions.ansible == '2-22'
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          sudo apt install -y podman-docker
+          sudo apt install -y podman-docker apparmor-utils
+          # disable AppArmor
+          sudo aa-teardown
+          sudo aa-status && echo ERROR: failed to disable AppArmor || echo INFO: AppArmor disabled
 
       - name: Run ansible-test
         run: |
