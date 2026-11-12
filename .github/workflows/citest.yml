@@ -50,9 +50,9 @@ jobs:
             markdownlint
             pr-title-lint
             qemu-kvm-integration-tests
+            check-docs-updated
             tft
             woke
-            check-docs-updated
             codeql
             python-unit-test
             shellcheck

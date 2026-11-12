@@ -22,7 +22,7 @@ jobs:
           - ver: "2.7"
             os: ubuntu-22.04
           - ver: "3.9"
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - ver: "3.10"
             os: ubuntu-latest
           - ver: "3.11"
