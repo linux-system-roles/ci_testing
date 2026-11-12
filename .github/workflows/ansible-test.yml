@@ -89,7 +89,7 @@ jobs:
           sudo apt update
           sudo apt install -y apparmor-utils podman podman-docker
           sudo aa-teardown
-          sudo aa-status
+          sudo aa-status && echo WARNING: AppArmor not disabled - subsequent tests may fail || echo INFO: AppArmor disabled
 
       - name: Run ansible-test
         run: |
