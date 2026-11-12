@@ -215,7 +215,7 @@ jobs:
           # we cannot skip these on the first test
           export SKIP_REQUIREMENTS=false
           for t in tests/tests_*.yml; do
-              if tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} $t > ${t}.log 2>&1; then
+              if sudo tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} $t > ${t}.log 2>&1; then
                   echo "PASS: $(basename $t)"
                   mv "${t}.log" "${t}-SUCCESS.log"
               else

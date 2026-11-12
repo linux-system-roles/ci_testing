@@ -93,7 +93,13 @@ jobs:
 
       - name: Run ansible-test
         run: |
-          tox \
+          set -euo pipefail
+          sudo_cmd=""
+          if [ "${{ matrix.versions.ansible }}" = "2-22" ]; then
+              # otherwise get permissions errors
+              sudo_cmd=sudo
+          fi
+          $sudo_cmd tox \
             -x testenv:ansible-test-${{ matrix.versions.ansible }}.basepython="python${{ matrix.versions.python }}" \
             -e ansible-test-${{ matrix.versions.ansible }}
 
