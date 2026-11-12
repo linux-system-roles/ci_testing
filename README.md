@@ -36,6 +36,8 @@ To use it in a playbook, specify: `fedora.linux_system_roles.ci_testing`.
 
 - For `rpm-ostree` systems, see the `README-ostree.md` file in the role.
 
+- Test
+
 ### Parameters
 
 | Parameter                                            | Comments |
