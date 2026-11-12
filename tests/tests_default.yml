@@ -16,6 +16,14 @@
       vars:
         __ci_testing_write_log_file: true
         __sr_public: true
+
+    - name: Create QEMU deployment during bootc end-to-end test
+      delegate_to: localhost
+      become: false
+      command: "{{ lsr_scriptdir }}/bootc-buildah-qcow.sh {{ ansible_host }}"
+      changed_when: true
+      when: ansible_connection == "buildah"
+
     - name: Get fingerprint entries from journal
       ansible.builtin.shell:
         executable: /bin/bash
