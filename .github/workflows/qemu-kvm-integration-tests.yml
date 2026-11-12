@@ -170,7 +170,12 @@ jobs:
       # https://lists.ubuntu.com/archives/apparmor/2026-January/013962.html
       - name: Disable AppArmor unprivileged_userns restriction
         if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'container')
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          # disable AppArmor
+          sudo apt install -y apparmor-utils
+          sudo aa-teardown
+          sudo aa-status && echo ERROR: failed to disable AppArmor || echo INFO: AppArmor disabled
 
       - name: Run qemu integration tests
         if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'qemu')
