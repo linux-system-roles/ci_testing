@@ -268,6 +268,8 @@ jobs:
         if: steps.check_platform.outputs.supported && failure()
         run: |
           set -euo pipefail
+          # ensure python3-requests for check_logs
+          sudo apt install -y python3-requests
           # grab check_logs.py script
           curl -s -L -o check_logs.py https://raw.githubusercontent.com/linux-system-roles/auto-maintenance/refs/heads/main/check_logs.py
           chmod +x check_logs.py
