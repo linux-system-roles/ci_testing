@@ -82,24 +82,14 @@ jobs:
         run: tox -e collection
 
       # https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
-      - name: Disable AppArmor and install podman alias for docker
+      # https://lists.ubuntu.com/archives/apparmor/2026-January/013962.html
+      - name: Disable AppArmor unprivileged_userns restriction
         if: matrix.versions.ansible == '2-22'
-        run: |
-          set -euo pipefail
-          sudo apt update
-          sudo apt install -y apparmor-utils podman podman-docker
-          sudo aa-teardown
-          sudo aa-status && echo WARNING: AppArmor not disabled - subsequent tests may fail || echo INFO: AppArmor disabled
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Run ansible-test
         run: |
-          set -euo pipefail
-          sudo_cmd=""
-          if [ "${{ matrix.versions.ansible }}" = "2-22" ]; then
-              # otherwise get permissions errors
-              sudo_cmd=sudo
-          fi
-          $sudo_cmd tox \
+          tox \
             -x testenv:ansible-test-${{ matrix.versions.ansible }}.basepython="python${{ matrix.versions.python }}" \
             -e ansible-test-${{ matrix.versions.ansible }}
 

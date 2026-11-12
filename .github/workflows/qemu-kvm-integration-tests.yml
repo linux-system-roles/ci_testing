@@ -167,14 +167,10 @@ jobs:
           https://raw.githubusercontent.com/linux-system-roles/linux-system-roles.github.io/master/download/linux-system-roles.json
 
       # https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
-      - name: Disable AppArmor for container workflows
+      # https://lists.ubuntu.com/archives/apparmor/2026-January/013962.html
+      - name: Disable AppArmor unprivileged_userns restriction
         if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'container')
-        run: |
-          set -euo pipefail
-          sudo apt update
-          sudo apt install -y apparmor-utils
-          sudo aa-teardown
-          sudo aa-status && echo WARNING: AppArmor not disabled - subsequent tests may fail || echo INFO: AppArmor disabled
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Run qemu integration tests
         if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'qemu')
@@ -215,7 +211,7 @@ jobs:
           # we cannot skip these on the first test
           export SKIP_REQUIREMENTS=false
           for t in tests/tests_*.yml; do
-              if sudo tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} $t > ${t}.log 2>&1; then
+              if tox -e ${{ matrix.scenario.env }} -- --image-name ${{ matrix.scenario.image }} $t > ${t}.log 2>&1; then
                   echo "PASS: $(basename $t)"
                   mv "${t}.log" "${t}-SUCCESS.log"
               else
