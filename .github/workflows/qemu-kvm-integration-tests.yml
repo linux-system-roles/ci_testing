@@ -141,7 +141,7 @@ jobs:
           python3 -m pip install --upgrade pip
           sudo apt update
           sudo apt install -y --no-install-recommends git ansible-core genisoimage qemu-system-x86 qemu-utils
-          pip3 install "git+https://github.com/linux-system-roles/tox-lsr@b30596c6fd1863b2eed20206ef32d13eac478e18"
+          pip3 install "git+https://github.com/richm/tox-lsr@ci-bootc-use-image-builder-container"
 
       - name: Check for podman version 5 or higher
         id: check_podman_version
@@ -165,6 +165,16 @@ jobs:
         run: >-
           curl -o ~/.config/linux-system-roles.json
           https://raw.githubusercontent.com/linux-system-roles/linux-system-roles.github.io/master/download/linux-system-roles.json
+
+      # https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
+      - name: Disable AppArmor for container workflows
+        if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'container')
+        run: |
+          set -euo pipefail
+          sudo apt update
+          sudo apt install -y apparmor-utils
+          sudo aa-teardown
+          sudo aa-status
 
       - name: Run qemu integration tests
         if: steps.check_platform.outputs.supported && startsWith(matrix.scenario.env, 'qemu')
