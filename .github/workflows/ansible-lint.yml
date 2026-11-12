@@ -27,7 +27,7 @@ jobs:
         # https://github.com/ansible-collections/partner-certification-checker/blob/main/.github/workflows/certification-reusable.yml#L108
         versions:
           - { ansible_lint: "24.*", ansible: "2.16.*", python: "3.12" }
-          - { ansible_lint: "26.*", ansible: "2.20.*", python: "3.13" }
+          - { ansible_lint: "26.*", ansible: "2.22.*", python: "3.14" }
     steps:
       - name: Get PR head SHA and context
         if: github.event_name == 'issue_comment'
