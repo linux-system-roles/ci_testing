@@ -83,9 +83,11 @@ jobs:
 
       # https://bugs.launchpad.net/ubuntu/+source/podman/+bug/2154379
       # https://lists.ubuntu.com/archives/apparmor/2026-January/013962.html
-      - name: Disable AppArmor unprivileged_userns restriction
+      - name: Disable AppArmor unprivileged_userns restriction and use podman for docker
         if: matrix.versions.ansible == '2-22'
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt install -y podman-docker
 
       - name: Run ansible-test
         run: |
