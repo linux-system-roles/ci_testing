@@ -18,6 +18,7 @@ argument_specs:
         Install them with C(ansible-galaxy collection install -vv -r meta/collection-requirements.yml).
         Non-ostree systems need no extra collections.
       - 'For C(rpm-ostree) systems, see the C(README-ostree.md) file in the role.'
+      - Test
     author:
       - Sergei Petrosian (@spetrosi)
     # attributes renders as the "Attributes" table. Use it for support
